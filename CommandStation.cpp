@@ -49,6 +49,45 @@ void SERCOM4_Handler()
 }
 #endif
 
+// this code is here to demonstrate use of the DCC API and other techniques
+
+// myFilter is an example of an OPTIONAL command filter used to intercept < > commands from
+// the usb or wifi streamm.  It demonstrates how a command may be intercepted
+//  or even a new command created without having to break open the API library code.
+// The filter is permitted to use or modify the parameter list before passing it on to 
+// the standard parser. By setting the opcode to 0, the standard parser will 
+// just ignore the command on the assumption that you have already handled it.
+//
+// The filter must be enabled by calling the DCC EXParser::setFilter method, see use in setup().
+ 
+void myFilter(Print & stream, byte & opcode, byte & paramCount, int p[]) {
+    (void)stream; // avoid compiler warning if we don't access this parameter
+    switch (opcode) {  
+       case 'F': // Invent new command to call the new Loco Function API <F cab func 1|0>
+             //DIAG(F("Setting loco %d F%d %S"),p[0],p[1],p[2]?F("ON"):F("OFF"));
+             DCCMain::setFunction(p[0],p[1],p[2]==1); // error here as there is no overload for int, int, bool
+             opcode=0;  // tell parser to ignore this command
+             break; 
+       case '$':   // Diagnose parser <$....>
+            //DIAG(F("$ paramCount=%d\n"),paramCount);
+            //for (int i=0;i<paramCount;i++) DIAG(F("p[%d]=%d (0x%x)\n"),i,p[i],p[i]);
+            opcode=0; // Normal parser wont understand $, 
+            break;
+       default:  // drop through and parser will use the command unaltered.   
+            break;  
+    }
+}
+
+// Callback functions are necessary if you call any API that must wait for a response from the 
+// programming track. The API must return immediately otherwise other loop() functions would be blocked.
+// Your callback function will be invoked when the data arrives from the prog track.
+// See the DCC:getLocoId example in the setup function. 
+
+
+//void myCallback(int result) {
+//  DIAG(F("\n getting Loco Id callback result=%d"),result); 
+//}
+
 void setup() {
   mainTrack->setup();
   progTrack->setup();
