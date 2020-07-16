@@ -28,7 +28,11 @@
 #include "Config.h"
 
 const uint8_t kIRQmicros = 29;
-const uint8_t kNumLocos = 50;
+#if defined(ARDUINO_AVR_UNO)
+const uint8_t kNumLocos = 20;
+#else
+const uint8_t kNumLocos = 20;
+#endif
 
 #if defined CONFIG_WSM_FIREBOX
 DCCMain *mainTrack = DCCMain::Create_WSM_FireBox_Main(kNumLocos);
@@ -78,7 +82,7 @@ void setup()
 #if defined(CONFIG_ENABLE_WIFI) && !defined(ARDUINO_AVR_UNO)
   CommManager::registerInterface(new WifiInterface(Serial1, F(CONFIG_WIFI_SSID), F(CONFIG_WIFI_PASSWORD), F(CONFIG_HOSTNAME), F(CONFIG_MDNS_SERVERNAME), CONFIG_SERVER_PORT));
 #elif defined(CONFIG_ENABLE_WIFI) && defined(ARDUINO_AVR_UNO)
-  SoftwareSerial wifiSerial(2, 3);
+  SoftwareSerial wifiSerial(4, 5);
   CommManager::registerInterface(new WifiInterface(wifiSerial, F(CONFIG_WIFI_SSID), F(CONFIG_WIFI_PASSWORD), F(CONFIG_HOSTNAME), F(CONFIG_MDNS_SERVERNAME), CONFIG_SERVER_PORT));
 #endif
 
