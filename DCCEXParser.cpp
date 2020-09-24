@@ -16,6 +16,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include "config.h"
 #include "StringFormatter.h"
 #include "DCCEXParser.h"
 #include "DCC.h"
@@ -304,7 +305,8 @@ void DCCEXParser::parse(Print * stream,  byte *com, bool blocking) {
 
     case 's':      // <s>
         StringFormatter::send(stream,F("<p%d>"),DCCWaveform::mainTrack.getPowerMode()==POWERMODE::ON );
-        StringFormatter::send(stream,F("<iDCC-EX V-%S / %S / %S G-%S>"), VERSION, F(ARDUINO_TYPE), F(MOTOR_BOARD_TYPE), F(GITHUB_SHA));
+        StringFormatter::send(stream,F("<iDCC-EX V-%S / %S / %S G-%S>"),
+			      VERSION, F(ARDUINO_DESCRIPTION), F(MOTOR_SHIELD_DESCRIPTION), F(GITHUB_SHA));
         // TODO Send stats of  speed reminders table 
         // TODO send status of turnouts etc etc 
         return;
