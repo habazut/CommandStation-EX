@@ -139,6 +139,7 @@ void DCCWaveform::checkPowerOverload() {
     case POWERMODE::ON:
       // Check current
       lastCurrent = motorDriver->getCurrentRaw();
+      LCD(isMainTrack ? 2 : 3, F("%s I=%5d"), isMainTrack ? "MAIN" : "PROG", lastCurrent);
       if (lastCurrent <= tripValue) {
         sampleDelay = POWER_SAMPLE_ON_WAIT;
 	if(power_good_counter<100)
