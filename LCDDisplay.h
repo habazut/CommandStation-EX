@@ -25,8 +25,8 @@
 class LCDDisplay : public Print {
 
   public:
-    static const int MAX_LCD_ROWS=8;
-    static const int MAX_LCD_COLS=16;
+    static const int MAX_LCD_ROWS=10;
+    static const int MAX_LCD_COLS=22;
     static const long LCD_SCROLL_TIME=3000; // 3 seconds  
     
     static LCDDisplay* lcdDisplay; 
