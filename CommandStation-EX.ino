@@ -11,6 +11,7 @@
 
 #include "config.h"
 #include "DCCEX.h"
+#include "DCCWaveform.h"
 
 // Create a serial command parser for the USB connection, 
 // This supports JMRI or manual diagnostics and commands
@@ -30,11 +31,22 @@ void setup()
     // This block is ignored if LCD not in use 
     LCD(0,F("DCC++ EX v%S"),F(VERSION));
     LCD(1,F("Starting")); 
-    LCD(2,F("2"));
-    LCD(3,F("3"));
-    LCD(4,F("4"));
-    LCD(5,F("5              21-->|X"));
-    LCD(6,F("6 дце xx"));
+    char c[22];
+    c[21] = 0;
+    LCD(2,F("0123456789012345678901"),c);
+    for (int n=0; n<21; n++) {
+        c[n]=n+160;
+    }
+    LCD(3,F("%s"),c);
+    for (int n=0; n<21; n++) {
+        c[n]=n+181;
+    }
+    LCD(4,F("%s"),c);
+    for (int n=0; n<21; n++) {
+        c[n]=n+128;
+    }
+    LCD(5,F("%s"),c);
+    LCD(6,F("6 \207 xx"));
     LCD(7,F("7"));
     LCD(8,F("8"));
     LCD(9,F("9"));
@@ -58,6 +70,7 @@ void setup()
 
   DCC::begin(MOTOR_SHIELD_TYPE); 
   LCD(1,F("Ready")); 
+  DCCWaveform::mainTrack.setPowerMode(POWERMODE::ON);
 }
 
 void loop()
