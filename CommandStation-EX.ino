@@ -9,7 +9,12 @@
 //  THE WIFI FEATURE IS NOT SUPPORTED ON ARDUINO DEVICES WITH ONLY 2KB RAM.
 ////////////////////////////////////////////////////////////////////////////////////
 
+#if __has_include ("config.h")
 #include "config.h"
+#else
+#include "config.example.h"
+#endif
+
 #include "DCCEX.h"
 #include "DCCWaveform.h"
 
