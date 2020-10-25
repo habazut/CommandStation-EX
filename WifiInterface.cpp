@@ -220,8 +220,9 @@ bool WifiInterface::setup2(const __FlashStringHelper* SSid, const __FlashStringH
     if (oldCmd) {
       while (wifiStream->available()) StringFormatter::printEscape( wifiStream->read()); /// THIS IS A DIAG IN DISGUISE
 
-      StringFormatter::send(wifiStream, F("AT+CWSAP=\"DCCEX_%s\",\"PASS_%s\",1,4\r\n"), macTail, macTail);
-      checkForOK(16000, OK_SEARCH, true); // can ignore failure as AP mode may still be ok
+      int i=0;
+      do StringFormatter::send(wifiStream, F("AT+CWSAP=\"DCCEX_%s\",\"PASS_%s\",1,4\r\n"), macTail, macTail);
+      while (i++<2 && !checkForOK(16000, OK_SEARCH, true)); // can ignore failure as AP mode may still be ok
       
     } else {
 
@@ -233,9 +234,11 @@ bool WifiInterface::setup2(const __FlashStringHelper* SSid, const __FlashStringH
     }
   }
 
+  StringFormatter::send(wifiStream, F("AT+CIPSERVER=0\r\n")); // turn off tcp server
+  checkForOK(10000, OK_SEARCH, true); // ignore result
    
   StringFormatter::send(wifiStream, F("AT+CIPMUX=1\r\n")); // configure for multiple connections
-  if (!checkForOK(10000, OK_SEARCH, true)) return false;
+  checkForOK(10000, OK_SEARCH, true);
 
   StringFormatter::send(wifiStream, F("AT+CIPSERVER=1,%d\r\n"), port); // turn on server on port
   if (!checkForOK(10000, OK_SEARCH, true)) return false;
