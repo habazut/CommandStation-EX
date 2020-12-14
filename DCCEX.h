@@ -15,6 +15,7 @@
 #endif
 #include "LCD_Implementation.h"
 #include "freeMemory.h"
+#include "Analogin.h"
 #include <Arduino.h>
 
 #endif

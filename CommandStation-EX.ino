@@ -32,6 +32,8 @@ void setup()
     LCD(1,F("Starting")); 
     }   
 
+  Analogin::setup();
+
 //  Start the WiFi interface on a MEGA, Uno cannot currently handle WiFi
 
 #if WIFI_ON
@@ -74,6 +76,9 @@ void loop()
 #if ETHERNET_ON
   EthernetInterface::loop();
 #endif
+
+  // Check analog pins
+  Analogin::loop();
 
   LCDDisplay::loop();  // ignored if LCD not in use 
   
