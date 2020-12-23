@@ -17,6 +17,8 @@
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
+#ifdef ANALOGINPORT
 #include "Analogin.h"
 #include "AnalogReadFast.h"
 #include "DCC.h"
@@ -56,3 +58,4 @@ void Analogin::loop() {
     a11old=a11;
     i++;
 }
+#endif // ANALOGINPORT

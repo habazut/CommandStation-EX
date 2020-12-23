@@ -16,6 +16,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
+
+#include "config.h"
+#ifdef ANALOGINPORT
 #ifndef Analogin_h
 #define Analogin_h
 #include <Arduino.h>
@@ -28,4 +31,5 @@ private:
 
 };
 
-#endif
+#endif // ANALOGIN_H
+#endif // ANALOGINPORT
