@@ -85,12 +85,14 @@ class DCCWaveform {
 	maxAckPulseDuration = i;
     }
    static void interruptHandler();
+   static void interruptRC();
  
   private:
     bool interrupt1();
     void interrupt2();
     void checkAck();
     void setSignal(bool high);
+    void setDiag(bool high);
     
     bool isMainTrack;
     MotorDriver*  motorDriver;

@@ -19,6 +19,10 @@ DCCEXParser serialParser;
 
 void setup()
 {
+#ifdef DIAG_PIN
+  pinMode(DIAG_PIN, OUTPUT);
+  pinMode(RC_PIN, OUTPUT);
+#endif
   // The main sketch has responsibilities during setup()
 
   // Responsibility 1: Start the usb connection for diagnostics

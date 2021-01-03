@@ -19,9 +19,19 @@
  */
 #include <Arduino.h>
 
+#include "config.h"
+
+#ifdef DIAG_PIN
+#define GPIO2_PREFER_SPEED 1
+#include <DIO2.h>  // use IDE menu Tools..Manage Libraries to locate and  install DIO2
+#define WritePin digitalWrite2
+#define ReadPin digitalRead2
+#endif
+
 #include "DCCWaveform.h"
 #include "DIAG.h"
- 
+
+byte rcDirection = LOW; 
 const int NORMAL_SIGNAL_TIME=58;  // this is the 58uS DCC 1-bit waveform half-cycle 
 
 DCCWaveform  DCCWaveform::mainTrack(PREAMBLE_BITS_MAIN, true);
@@ -47,6 +57,13 @@ void DCCWaveform::begin(MotorDriver * mainDriver, MotorDriver * progDriver) {
   mainTrack.motorDriver->setPwm(); // may enable PWM for the signal pin
   progTrack.motorDriver->setPwm(); // may enable PWM for the signal pin 
   TIMSK1 = _BV(TOIE1); // Enable Software interrupt
+
+  // Timer2
+  TCCR2A = 0;          // normal mode
+  TCCR2B = 0;
+  TCCR2B = (1 <<CS21); // Prescaler 1/8
+  GTCCR |= (1<<PSRASY);
+
   interrupts();
   // TimerOne gives us TCCR1A=xA0 ICR1=x1D0 TCCR1B=x11 TIMSK1=x1
   DIAG(F("\nTimer1 TCCR1A=x%x ICR1=x%x TCCR1B=x%x TIMSK1=x%x\n"),TCCR1A,ICR1,TCCR1B,TIMSK1);   
@@ -56,6 +73,10 @@ void DCCWaveform::begin(MotorDriver * mainDriver, MotorDriver * progDriver) {
 ISR(TIMER1_OVF_vect)
 {
     DCCWaveform::interruptHandler();
+}
+ISR(TIMER2_OVF_vect)
+{
+    DCCWaveform::interruptRC();
 }
 
 void DCCWaveform::loop() {
@@ -76,6 +97,10 @@ void DCCWaveform::interruptHandler() {
   if (progCall2) progTrack.interrupt2();
 }
 
+void DCCWaveform::interruptRC() {
+    WritePin(RC_PIN, rcDirection);
+    TIMSK2 &= ~(_BV(TOIE2)) ; // clear TOIE2 bit in TIMSK2.
+}
 
 // An instance of this class handles the DCC transmissions for one track. (main or prog)
 // Interrupts are marshalled via the statics.
@@ -213,14 +238,48 @@ void DCCWaveform::setSignal(bool high) {
   }
   motorDriver->setSignal(high);
 }
+
+#ifdef DIAG_PIN
+void DCCWaveform::setDiag(bool high) {
+    if (isMainTrack) {
+	WritePin(DIAG_PIN, high);
+	if (high == HIGH) {
+	} else {
+	}
+    }
+}
+#endif
+
       
 void DCCWaveform::interrupt2() {
   // set currentBit to be the next bit to be sent.
 
   if (remainingPreambles > 0 ) {
+#ifdef DIAG_PIN
+    if (isMainTrack) {
+	if (requiredPreambles - remainingPreambles == 1) {
+	    setDiag(HIGH);
+	    TCNT2 = 220;          // test
+	    TIFR2 = 1 << TOV2;
+	    rcDirection=HIGH;
+	    TIMSK2 |= (1<<TOIE2); // interrupt enable
+	} else if (requiredPreambles - remainingPreambles == 5) {
+	    setDiag(LOW);
+
+	    TCNT2 = 220;          // test
+	    TIFR2 = 1 << TOV2;
+	    rcDirection=LOW;
+	    TIMSK2 |= (1<<TOIE2); // interrupt enable
+	}
+    }
+#endif
     currentBit = true;
     remainingPreambles--;
     return;
+  }
+
+  if (isMainTrack) {
+      WritePin(RC_PIN, LOW);
   }
 
   // beware OF 9-BIT MASK  generating a zero to start each byte
