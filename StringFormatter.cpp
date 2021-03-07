@@ -47,7 +47,7 @@ void StringFormatter::lcd(byte row, const FSH* input...) {
   va_list args;
 
   // Issue the LCD as a diag first
-  diag(F("\nLCD%d:"),row);
+  diag(F("LCD%d:"),row);
   va_start(args, input);
   send2(diagSerial,input,args);
   diag(F("\n"));

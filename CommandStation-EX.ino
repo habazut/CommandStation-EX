@@ -63,10 +63,18 @@ void setup()
     // This block is still executed for DIAGS if LCD not in use 
     LCD(0,F("DCC++ EX v%S"),F(VERSION));
     LCD(1,F("Starting")); 
-    }   
+  }
 
-//  Start the WiFi interface on a MEGA, Uno cannot currently handle WiFi
+  // Responsibility 2: Start the DCC engine.
+  // Note: this provides DCC with two motor drivers, main and prog, which handle the motor shield(s)
+  // Standard supported devices have pre-configured macros but custome hardware installations require
+  // detailed pin mappings and may also require modified subclasses of the MotorDriver to implement specialist logic.
+  // Motor shield types are defined in MotorShields.h
 
+  // Side effect: Prints version string 
+  DCC::begin(MOTOR_SHIELD_TYPE); 
+
+  //  Start the WiFi interface on a MEGA, Uno cannot currently handle WiFi
 #if WIFI_ON
   WifiInterface::setup(WIFI_SERIAL_LINK_SPEED, F(WIFI_SSID), F(WIFI_PASSWORD), F(WIFI_HOSTNAME), IP_PORT, WIFI_CHANNEL);
 #endif // WIFI_ON
@@ -74,26 +82,16 @@ void setup()
 #if ETHERNET_ON
   EthernetInterface::setup();
 #endif // ETHERNET_ON
-
-  // Responsibility 3: Start the DCC engine.
-  // Note: this provides DCC with two motor drivers, main and prog, which handle the motor shield(s)
-  // Standard supported devices have pre-configured macros but custome hardware installations require
-  //  detailed pin mappings and may also require modified subclasses of the MotorDriver to implement specialist logic.
-
-  // STANDARD_MOTOR_SHIELD, POLOLU_MOTOR_SHIELD, FIREBOX_MK1, FIREBOX_MK1S are pre defined in MotorShields.h
-
- 
-  DCC::begin(MOTOR_SHIELD_TYPE); 
          
-  #if defined(RMFT_ACTIVE) 
-      RMFT::begin();
-  #endif
+#if defined(RMFT_ACTIVE) 
+  RMFT::begin();
+#endif
 
-  #if __has_include ( "mySetup.h")
-        #define SETUP(cmd) serialParser.parse(F(cmd))  
-        #include "mySetup.h"
-        #undef SETUP
-       #endif
+#if __has_include ( "mySetup.h")
+#define SETUP(cmd) serialParser.parse(F(cmd))  
+#include "mySetup.h"
+#undef SETUP
+#endif
 
   LCD(1,F("Ready")); 
 }
