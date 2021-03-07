@@ -31,7 +31,7 @@
 #include "EEStore.h"
 #include "DIAG.h"
 
-// These keywords are used in the <1> command. The number is what you get if you use the keyword as a parameter.
+// These keywords are used in various commands. The number is what you get if you use the keyword as a parameter.
 // To discover new keyword numbers , use the <$ YOURKEYWORD> command
 const int HASH_KEYWORD_PROG = -29718;
 const int HASH_KEYWORD_MAIN = 11339;
@@ -51,7 +51,7 @@ const int HASH_KEYWORD_LIMIT = 27413;
 const int HASH_KEYWORD_ETHERNET = -30767;    
 const int HASH_KEYWORD_MAX = 16244;
 const int HASH_KEYWORD_MIN = 15978;
-const int HASH_KEYWORD_LCN = 1212;  // TBA NOT YET KNOWN 
+const int HASH_KEYWORD_LCN = 15137;   
 
 int DCCEXParser::stashP[MAX_COMMAND_PARAMS];
 bool DCCEXParser::stashBusy;
