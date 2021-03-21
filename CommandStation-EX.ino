@@ -45,6 +45,7 @@
 
 
 #include "DCCEX.h"
+#include "LNet.h"
 
 // Create a serial command parser for the USB connection, 
 // This supports JMRI or manual diagnostics and commands
@@ -96,10 +97,12 @@ void setup()
        #endif
 
   LCD(1,F("Ready")); 
+  LNet::begin();
 }
 
 void loop()
 {
+  LNet::loop();
   // The main sketch has responsibilities during loop()
 
   // Responsibility 1: Handle DCC background processes
