@@ -92,15 +92,15 @@ void I2CManagerClass::write(uint8_t address, int nBytes, ...) {
 //
 uint8_t I2CManagerClass::read(uint8_t address, uint8_t readBuffer[], uint8_t readSize,
                               uint8_t writeBuffer[], uint8_t writeSize) {
-  Wire.beginTransmission(address);
-  if (writeSize > 0) 
+  if (writeSize > 0) {
+    Wire.beginTransmission(address);
     Wire.write(writeBuffer, writeSize);
-  Wire.endTransmission(false); // Don't free bus yet
+    Wire.endTransmission(false); // Don't free bus yet
+  }
   Wire.requestFrom(address, readSize);
   uint8_t nBytes = 0;
   while (Wire.available() && nBytes < readSize) 
     readBuffer[nBytes++] = Wire.read();
-  Wire.endTransmission(true); // Now free bus
   return nBytes;
 }
 
@@ -108,6 +108,7 @@ uint8_t I2CManagerClass::read(uint8_t address, uint8_t readBuffer[], uint8_t rea
 uint8_t I2CManagerClass::read(uint8_t address, uint8_t readBuffer[], uint8_t readSize, 
                                   uint8_t writeSize, ...) {
   va_list args;
+  // Copy the series of bytes into an array.
   va_start(args, writeSize);
   uint8_t writeBuffer[writeSize];
   for (uint8_t i=0; i<writeSize; i++)
