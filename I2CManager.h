@@ -51,11 +51,11 @@ public:
   // Check if specified I2C address is responding.
   uint8_t exists(uint8_t address);
   // Write a complete transmission to I2C from an array in RAM
-  void write(uint8_t address, const uint8_t buffer[], uint8_t size);
+  uint8_t write(uint8_t address, const uint8_t buffer[], uint8_t size);
   // Write a complete transmission to I2C from an array in Flash
-  void write_P(uint8_t address, const uint8_t buffer[], uint8_t size);
+  uint8_t write_P(uint8_t address, const uint8_t buffer[], uint8_t size);
   // Write a transmission to I2C from a list of bytes.
-  void write(uint8_t address, int nBytes, ...);
+  uint8_t write(uint8_t address, int nBytes, ...);
   // Write a command from an array in RAM and read response
   uint8_t read(uint8_t address, uint8_t writeBuffer[], uint8_t writeSize, 
     uint8_t readBuffer[], uint8_t readSize);

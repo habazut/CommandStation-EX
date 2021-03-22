@@ -56,29 +56,29 @@ uint8_t I2CManagerClass::exists(uint8_t address) {
 }
 
 // Write a complete transmission to I2C using a supplied buffer of data
-void I2CManagerClass::write(uint8_t address, const uint8_t buffer[], uint8_t size) {
+uint8_t I2CManagerClass::write(uint8_t address, const uint8_t buffer[], uint8_t size) {
   Wire.beginTransmission(address);
   Wire.write(buffer, size);
-  Wire.endTransmission();
+  return Wire.endTransmission();
 }
 
 // Write a complete transmission to I2C using a supplied buffer of data in Flash
-void I2CManagerClass::write_P(uint8_t address, const uint8_t buffer[], uint8_t size) {
+uint8_t I2CManagerClass::write_P(uint8_t address, const uint8_t buffer[], uint8_t size) {
   uint8_t ramBuffer[size];
   memcpy_P(ramBuffer, buffer, size);
-  write(address, ramBuffer, size);
+  return write(address, ramBuffer, size);
 }
   
 
 // Write a complete transmission to I2C using a list of data 
-void I2CManagerClass::write(uint8_t address, int nBytes, ...) {
+uint8_t I2CManagerClass::write(uint8_t address, int nBytes, ...) {
   uint8_t buffer[nBytes];
   va_list args;
   va_start(args, nBytes);
   for (uint8_t i=0; i<nBytes; i++)
     buffer[i] = va_arg(args, int);
-  write(address, buffer, nBytes);
   va_end(args);
+  return write(address, buffer, nBytes);
 }
 
 // Write a command and read response, returns number of bytes received.
