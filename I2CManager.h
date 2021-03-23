@@ -49,7 +49,8 @@ public:
   // Force clock speed 
   void forceClock(uint32_t speed);
   // Check if specified I2C address is responding.
-  uint8_t exists(uint8_t address);
+  uint8_t checkAddress(uint8_t address);
+  bool exists(uint8_t address);
   // Write a complete transmission to I2C from an array in RAM
   uint8_t write(uint8_t address, const uint8_t buffer[], uint8_t size);
   // Write a complete transmission to I2C from an array in Flash

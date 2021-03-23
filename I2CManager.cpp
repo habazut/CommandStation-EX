@@ -49,10 +49,14 @@ void I2CManagerClass::forceClock(uint32_t speed) {
 
 // Check if specified I2C address is responding.
 // Returns 0 if OK, or error code.
-uint8_t I2CManagerClass::exists(uint8_t address) {
+uint8_t I2CManagerClass::checkAddress(uint8_t address) {
   begin();
   Wire.beginTransmission(address);
   return Wire.endTransmission();
+}
+
+bool I2CManagerClass::exists(uint8_t address) {
+  return checkAddress(address)==0;
 }
 
 // Write a complete transmission to I2C using a supplied buffer of data

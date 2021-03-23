@@ -34,8 +34,7 @@ LCDDisplay::LCDDisplay() {
   I2CManager.begin();
   I2CManager.setClock(400000L);  // Set max supported I2C speed
   for (byte address = 0x3c; address <= 0x3d; address++) {
-    byte error = I2CManager.exists(address);
-    if (!error) {
+    if (I2CManager.exists(address)) {
       // Device found
       DIAG(F("\nOLED display found at 0x%x"), address);
       interfake(OLED_DRIVER, 0);

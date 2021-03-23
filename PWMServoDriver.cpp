@@ -59,7 +59,7 @@ bool PWMServoDriver::setup(int board) {
   uint8_t i2caddr=PCA9685_I2C_ADDRESS + board;
 
   // Test if device is available
-  byte error = I2CManager.exists(i2caddr);
+  byte error = I2CManager.checkAddress(i2caddr);
   if (error) {
     DIAG(F("\nI2C Servo device 0x%x Not Found %d\n"),i2caddr, error);
     failFlags|=1<<board;  
