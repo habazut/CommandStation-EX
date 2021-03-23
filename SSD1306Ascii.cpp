@@ -18,7 +18,6 @@
 #include "SSD1306Ascii.h"
 #include "I2CManager.h"
 #include "FSH.h"
-#include "DIAG.h"
 
 
 // Maximum number of bytes we can send per transmission is 32.
