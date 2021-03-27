@@ -25,6 +25,7 @@
 //#include <LocoNet.h>
 #include "DIAG.h"
 #include "LNet.h"
+#include "DCC.h"
 
 #define LOCONET_TX_PIN 7
 static lnMsg *lnpacket  ;
@@ -160,8 +161,11 @@ SlotNum LNet::setslotdata(byte* msg){
     */
   } else {
     slotTable[slotnr].addr  = addr;
-    slotTable[slotnr].speed = msg[5];
-    slotTable[slotnr].dir   = msg[6] & DIRF_DIR;
+    uint8_t speed = msg[5] & 0xF7;
+    slotTable[slotnr].speed = speed;
+    uint8_t dir = msg[6] & DIRF_DIR;
+    slotTable[slotnr].dir   = dir;
+    DCC::setThrottle(slotTable[slotnr].addr, LNetToDCCSpeed(speed), dir);
 /*
     slot[slotnr].f0    = ((msg[6] & DIRF_F0) != 0 ? True:False);
     slot[slotnr].f1    = ((msg[6] & DIRF_F1) != 0 ? True:False);
@@ -232,8 +236,10 @@ SlotNum LNet::locospeed  (byte* msg){
   if(slotnr == 0 || slotTable[slotnr].addr == 0 ) {
     return slotnr;
   }
-  slotTable[slotnr].speed = msg[2] & 0x7F;
-  DIAG(F("set slot# %d speed to %d"), slotnr, slotTable[slotnr].speed);
+  uint8_t speed = msg[2] & 0x7F;
+  slotTable[slotnr].speed = speed;
+  DIAG(F("set slot# %d speed to %d"), slotnr, speed);
+  DCC::setThrottle(slotTable[slotnr].addr, LNetToDCCSpeed(speed), DCC::getThrottleDirection(slotTable[slotnr].addr));
   return slotnr;
 }
 
@@ -243,7 +249,9 @@ SlotNum LNet::locodirf   (byte* msg){
     return slotnr;
   }
 
-  slotTable[slotnr].dir = (msg[2] & DIRF_DIR); /* 1 == reverse */
+  uint8_t dir = (msg[2] & DIRF_DIR); /* 1 == reverse */
+  slotTable[slotnr].dir = dir;
+  DCC::setThrottle(slotTable[slotnr].addr, DCC::getThrottleSpeed(slotTable[slotnr].addr), dir);
   slotTable[slotnr].f0  = (msg[2] & DIRF_F0);
 /*
   slot[slotnr].f1  = (msg[2] & DIRF_F1) ? True:False;

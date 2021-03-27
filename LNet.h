@@ -34,6 +34,7 @@ public:
   bool f0;
   uint8_t idl;
   uint8_t idh;
+  uint8_t speedregister;
 /*
     Boolean inuse;// slot status1
     int status2;  // slot status2
@@ -94,5 +95,11 @@ private:
   void longAck(uint8_t opc, uint8_t rc);
   void slotdataRsp(SlotNum slotnr);
 
-
+  inline uint8_t LNetToDCCSpeed(uint8_t speed) {
+    if (speed == 0) return 0;
+    if (speed < 127) return speed + 1;
+    if (speed == 127) return 127;
+    return 0;
+  }
+    
 };
