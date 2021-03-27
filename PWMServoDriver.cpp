@@ -92,6 +92,5 @@ void PWMServoDriver::setServo(byte servoNum, uint16_t value) {
 }
 
 void PWMServoDriver::writeRegister(uint8_t i2caddr,uint8_t hardwareRegister, uint8_t d) {
-  uint8_t buffer[] = {hardwareRegister, d};
-  I2CManager.write(i2caddr, buffer, sizeof(buffer));
+  I2CManager.write(i2caddr, 2, hardwareRegister, d);
 }

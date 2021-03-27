@@ -26,10 +26,18 @@
 #include "DIAG.h"
 #endif
 
-// print all turnout states to stream
-void Turnout::printAll(Print *stream){
+// print all turnout states to stream.  return true if at least one exists.
+bool Turnout::printAll(Print *stream){
+  if (!Turnout::firstTurnout) return false; // No turnouts defined.
   for (Turnout *tt = Turnout::firstTurnout; tt != NULL; tt = tt->nextTurnout)
-    StringFormatter::send(stream, F("<H %d %d>"), tt->data.id, (tt->data.tStatus & STATUS_ACTIVE)!=0);
+    if (tt->data.tStatus & STATUS_PWM)
+      StringFormatter::send(stream, F("<H %d %d %d %d %d>"), tt->data.id, 
+        tt->data.tStatus & STATUS_PWMPIN, getPWMActiveSetting(tt->data), 
+        getPWMInactiveSetting(tt->data), (tt->data.tStatus & STATUS_ACTIVE)!=0);
+    else
+      StringFormatter::send(stream, F("<H %d %d %d %d>"), tt->data.id, 
+        tt->data.address, tt->data.subAddress, (tt->data.tStatus & STATUS_ACTIVE)!=0);
+  return true;
 } // Turnout::printAll
 
 bool Turnout::activate(int n,bool state){
@@ -60,7 +68,8 @@ void Turnout::activate(bool state) {
   else
     data.tStatus &= ~STATUS_ACTIVE;
   if (data.tStatus & STATUS_PWM)
-    PWMServoDriver::setServo(data.tStatus & STATUS_PWMPIN, (data.inactiveAngle+(state?data.moveAngle:0)));
+    PWMServoDriver::setServo(data.tStatus & STATUS_PWMPIN, 
+      state ? getPWMActiveSetting(data) : getPWMInactiveSetting(data));
   else
     DCC::setAccessory(data.address,data.subAddress, state);
   EEStore::store();
@@ -99,8 +108,11 @@ void Turnout::load(){
 
   for(int i=0;i<EEStore::eeStore->data.nTurnouts;i++){
     EEPROM.get(EEStore::pointer(),data);
-    if (data.tStatus & STATUS_PWM) tt=create(data.id,data.tStatus & STATUS_PWMPIN, data.inactiveAngle,data.moveAngle);
-    else tt=create(data.id,data.address,data.subAddress);
+    if (data.tStatus & STATUS_PWM)
+      tt=create(data.id, data.tStatus & STATUS_PWMPIN,
+        getPWMActiveSetting(data), getPWMInactiveSetting(data));
+    else
+      tt=create(data.id, data.address, data.subAddress);
     tt->data.tStatus=data.tStatus;
     EEStore::advance(sizeof(tt->data));
 #ifdef EESTOREDEBUG
@@ -138,11 +150,10 @@ Turnout *Turnout::create(int id, int add, int subAdd){
   return(tt);
 }
 
-Turnout *Turnout::create(int id, byte pin, int activeAngle, int inactiveAngle){
+Turnout *Turnout::create(int id, byte pin, int activeSetting, int inactiveSetting){
   Turnout *tt=create(id);
   tt->data.tStatus= STATUS_PWM | (pin &  STATUS_PWMPIN);
-  tt->data.inactiveAngle=inactiveAngle;
-  tt->data.moveAngle=activeAngle-inactiveAngle;
+  putPWMSettings(tt->data, activeSetting, inactiveSetting);
   return(tt);
 }
 
@@ -156,6 +167,25 @@ Turnout *Turnout::create(int id){
     }
   turnoutlistHash++;
   return tt;
+  }
+
+  int Turnout::getPWMActiveSetting(struct TurnoutData &tod) {
+    int setting = ((int)tod.pwmPar1 << 4) + ((tod.pwmPar2 >> 12) & 0x0f);
+    if (setting == 4095) setting = 4096;  // Allow for full-on
+    return setting;
+  }
+
+  int Turnout::getPWMInactiveSetting(struct TurnoutData &tod) {
+    int setting = tod.pwmPar2 & 0xfff;
+    if (setting == 4095) setting = 4096; // Allow for full on
+    return setting;
+  }
+
+  void Turnout::putPWMSettings(struct TurnoutData &tod, int activeSetting, int inactiveSetting) {
+    if (activeSetting >= 4096) activeSetting = 4095;
+    if (inactiveSetting >= 4096) inactiveSetting = 4095;
+    tod.pwmPar1 = activeSetting >> 4;
+    tod.pwmPar2 = (activeSetting & 0x0f) << 12 | inactiveSetting;
   }
 
 ///////////////////////////////////////////////////////////////////////////////

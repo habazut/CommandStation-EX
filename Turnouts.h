@@ -27,10 +27,23 @@ const byte STATUS_PWM=0x40; // Flag as a PWM turnout
 const byte STATUS_PWMPIN=0x3F; // PWM  pin 0-63
 
 struct TurnoutData {
-   int id;
-   uint8_t tStatus; // has STATUS_ACTIVE, STATUS_PWM, STATUS_PWMPIN  
-   union {uint8_t subAddress; char moveAngle;}; //DCC  sub addrerss or PWM difference from inactiveAngle  
-   union {int address; int inactiveAngle;}; // DCC address or PWM servo angle 
+  int id;
+  uint8_t tStatus; // has STATUS_ACTIVE, STATUS_PWM, STATUS_PWMPIN  
+  union {
+    struct {
+      // DCC settings
+      uint8_t subAddress; // DCC subaddress
+      int address;  // DCC address
+    };
+    struct {
+      // PWM settings are each 12 bits (0-4095) which pack 
+      // neatly into 8 bits + 16 bits.  To set the output 
+      // full-on requires a value of 4096, so 4096 is stored
+      // as 4095 so it fits in 12 bits.
+      uint8_t pwmPar1; // 8 bits of PWM settings
+      uint16_t pwmPar2; // remaining 16 bits of PWM settings
+    };
+  };
 };
 
 class Turnout {
@@ -46,13 +59,20 @@ class Turnout {
   static void load();
   static void store();
   static Turnout *create(int id , int address , int subAddress);
-  static Turnout *create(int id , byte pin , int activeAngle, int inactiveAngle);
+  static Turnout *create(int id , byte pin , int activeSetting, int inactiveSetting);
   static Turnout *create(int id);
   void activate(bool state);
-  static void printAll(Print *);
+  static bool printAll(Print *);
 #ifdef EESTOREDEBUG
   void print(Turnout *tt);
 #endif
+private:
+  // Retrieve PWM setting for active state from the struct.
+  static int getPWMActiveSetting(struct TurnoutData &tod);
+  // Retrieve PWM setting for inactive state from the struct.
+  static int getPWMInactiveSetting(struct TurnoutData &tod);
+  // Save PWM settings for active and inactive state into struct.
+  static void putPWMSettings(struct TurnoutData &tod, int activeSetting, int inactiveSetting);
 }; // Turnout
   
 #endif

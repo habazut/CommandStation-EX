@@ -639,13 +639,7 @@ bool DCCEXParser::parseT(Print *stream, int params, int p[])
     {
     case 0: // <T>  list turnout definitions
     {
-        bool gotOne = false;
-        for (Turnout *tt = Turnout::firstTurnout; tt != NULL; tt = tt->nextTurnout)
-        {
-            gotOne = true;
-            StringFormatter::send(stream, F("<H %d %d %d %d>"), tt->data.id, tt->data.address, 
-                tt->data.subAddress, (tt->data.tStatus & STATUS_ACTIVE)!=0);
-        }
+        bool gotOne = Turnout::printAll(stream);
         return gotOne; // will <X> if none found
     }
 
