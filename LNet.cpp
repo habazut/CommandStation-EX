@@ -22,12 +22,19 @@
  *
  */
 
+#include <stdio.h>
 //#include <LocoNet.h>
 #include "DIAG.h"
 #include "LNet.h"
 #include "DCC.h"
 
+//#if (defined(ARDUINO_AVR_MEGA) || defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_SAMD_ZERO))
+//#define LOCONET_TX_PIN 49
+//#else
 #define LOCONET_TX_PIN 7
+//#endif
+
+
 static lnMsg *lnpacket  ;
 
 LNet lSlots(20);
@@ -56,6 +63,7 @@ void LNet::loop() {
 
   lnpacket = LocoNet.receive();
   if( lnpacket ) {
+    DIAG(F("RX: "));
     lnPrint(lnpacket);
     uint8_t opcode = (uint8_t)lnpacket->sz.command;
     switch(opcode) {
@@ -88,11 +96,11 @@ void LNet::loop() {
         slotnr = lSlots.locodirf(lnpacket->data);
         break;
       default:
-        DIAG(F("Unknown opcode %x\n"),opcode);
+        DIAG(F("Unknown opcode %x"),opcode);
         break;
     } // switch(opcode)
     if( slotnr == -1 ) {
-      DIAG(F("slotnr=-1 error\n"));
+      DIAG(F("slotnr=-1 error"));
     }
   }
 }
@@ -104,19 +112,27 @@ LN_STATUS LNet::sendGPON() {
 }
 
 void LNet::lnPrint(lnMsg *packet){
+  char buf[54];
+  char *pos;
   uint8_t msgLen = getLnMsgSize(packet);
-  DIAG(F("RX: "));
+  if (msgLen > 16) {
+    msgLen = 16; // 16*3+6=54
+  }
+  pos = buf;
+  pos += sprintf(pos, "<*");
   for (uint8_t x = 0; x < msgLen; x++)
   {
-    DIAG(F("%x "), (uint8_t)(packet->data[x]));
+    pos += sprintf(pos, "%02x ", packet->data[x]);
   }
-  DIAG(F("\n"));
+  pos += sprintf(pos, "*>");
+  *pos = '\0';
+  StringFormatter::printEscapes(buf);
 }
 
 SlotNum LNet::locoaddress(byte* msg){
   uint16_t addr = lnLocoAddr(msg[1], msg[2]);
   SlotNum slotnr = allocateSlot(addr);
-  DIAG(F("Loco addr %d got slot %d\n"), addr, slotnr);
+  DIAG(F("Loco addr %d got slot %d"), addr, slotnr);
   if( slotnr == -1 ){
     longAck(OPC_LOCO_ADR, 0);
     return -1;
@@ -273,7 +289,7 @@ SlotNum LNet::allocateSlot (uint16_t addr) {
   SlotNum n;
   SlotNum emptyslot = 0;
   for (n=1 ; n<numSlots; n++) {
-    DIAG (F("Table %d has addr %d\n"), n, slotTable[n].addr);
+    //DIAG (F("Table %d has addr %d"), n, slotTable[n].addr);
     if (slotTable[n].addr == addr) {
       return n;
     }
@@ -284,7 +300,7 @@ SlotNum LNet::allocateSlot (uint16_t addr) {
   if (emptyslot) {
     slotTable[emptyslot].addr = addr;
     //slotTable[emptyslot].dir = True;
-    DIAG (F("Allocated slot %d\n"),emptyslot);
+    DIAG (F("Allocated slot %d"),emptyslot);
     return emptyslot;
   }
   return -1;
@@ -296,7 +312,7 @@ void LNet::longAck(uint8_t opc, uint8_t rc) {
   rsp.data[0] = OPC_LONG_ACK;
   rsp.data[1] = (opc & 0x7F);
   rsp.data[2] = (rc & 0x7F);
-  DIAG(F("send long ack to LocoNet\n"));
+  DIAG(F("send long ack to LocoNet"));
   LocoNet.send(&rsp);
 }
 
@@ -316,9 +332,8 @@ void LNet::slotdataRsp(SlotNum slotnr) {
   rsp.data[11] = slotTable[slotnr].idl;
   rsp.data[12] = slotTable[slotnr].idh;
   DIAG(F("send slotdataRsp to LocoNet: "));
-  for (int n=0 ; n<13; n++){
-    DIAG(F("%x "),rsp.data[n]);
-  }
-  DIAG(F("\n"));
+  lnPrint(&rsp);
   LocoNet.send(&rsp);
+  LnBufStats *lnbs = LocoNet.getStats();
+  DIAG(F("%d %d %d %d %d"), (int)lnbs->RxPackets,  (int)lnbs->RxErrors, (int)lnbs->TxPackets, (int)lnbs->TxErrors, (int)lnbs->Collisions);
 }

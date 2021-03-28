@@ -132,9 +132,13 @@ void StringFormatter::printEscapes(Print * stream,char * input) {
  if (!stream) return;
  for(int i=0; ; ++i) {
   char c=input[i];
+  if (c=='\0') return;    // do not print trailing \0
   printEscape(stream,c);
-  if (c=='\0') return;
  }
+}
+
+void StringFormatter::printEscapes(char * input) {
+  printEscapes(diagSerial,input);
 }
 
 void StringFormatter::printEscapes(Print * stream, const FSH * input) {
