@@ -335,5 +335,5 @@ void LNet::slotdataRsp(SlotNum slotnr) {
   lnPrint(&rsp);
   LocoNet.send(&rsp);
   LnBufStats *lnbs = LocoNet.getStats();
-  DIAG(F("%d %d %d %d %d"), (int)lnbs->RxPackets,  (int)lnbs->RxErrors, (int)lnbs->TxPackets, (int)lnbs->TxErrors, (int)lnbs->Collisions);
+  DIAG(F("RxP:%d RxE:%d TxP:%d TxE:%d Coll:%d"), (int)lnbs->RxPackets,  (int)lnbs->RxErrors, (int)lnbs->TxPackets, (int)lnbs->TxErrors, (int)lnbs->Collisions);
 }
