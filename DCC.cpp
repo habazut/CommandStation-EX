@@ -903,51 +903,58 @@ void DCC::callback(int value) {
     // Rule 2: If we are re-joining the main track we must power off for 30mS
 
     switch (callbackState) {    
-       case AFTER_WRITE:  // first attempt to callback after a write operation
-            callbackStart=millis();
-            callbackState=WAITING_100;
-            if (Diag::ACK) DIAG(F("Stable 100mS"));
-            break;
-            
-       case WAITING_100:  // waiting for 100mS
-            if (millis()-callbackStart < 100) break;
-            // stable after power maintained for 100mS
+      case AFTER_WRITE:  // first attempt to callback after a write operation
+	callbackStart=millis();
+	callbackState=WAITING_100;
+	if (Diag::ACK)
+	  DIAG(F("Stable 100mS"));
+	break;
 
-            // If we are going to power off anyway, it doesnt matter
-            // but if we will keep the power on, we must off it for 30mS
-            if (DCCWaveform::progTrack.autoPowerOff) callbackState=READY;
-            else { // Need to cycle power off and on
-                DCCWaveform::progTrack.setPowerMode(POWERMODE::OFF); 
-                callbackStart=millis();
-                callbackState=WAITING_30;
-                if (Diag::ACK) DIAG(F("OFF 30mS"));
-            }
-            break;
- 
-        case WAITING_30:  // waiting for 30mS with power off
-            if (millis()-callbackStart < 30) break;
-            //power has been off for 30mS
-            DCCWaveform::progTrack.setPowerMode(POWERMODE::ON); 
-            callbackState=READY;
-            break;
-     
-       case READY:  // ready after read, or write after power delay and off period.
-            // power off if we powered it on
-           if (DCCWaveform::progTrack.autoPowerOff) {
-              if (Diag::ACK) DIAG(F("Auto Prog power off"));
-              DCCWaveform::progTrack.doAutoPowerOff();
-           }
-          // Restore <1 JOIN> to state before BASELINE
-          if (ackManagerRejoin) {
-              setProgTrackSyncMain(true);
-              if (Diag::ACK) DIAG(F("Auto JOIN"));
-          }  
-    
-          ackManagerProg=NULL;  // no more steps to execute
-          if (Diag::ACK) DIAG(F("Callback(%d)"),value);
-          (ackManagerCallback)( value);
+      case WAITING_100:  // waiting for 100mS
+	if (millis()-callbackStart < 100) break;
+	// stable after power maintained for 100mS
+	
+	// If we are going to power off anyway, it doesnt matter
+	// but if we will keep the power on, we must off it for 30mS
+	if (DCCWaveform::progTrack.autoPowerOff) {
+	  callbackState=READY;
+	} else { // Need to cycle power off and on
+	  DCCWaveform::progTrack.setPowerMode(POWERMODE::OFF); 
+	  callbackStart=millis();
+	  callbackState=WAITING_30;
+	  if (Diag::ACK) DIAG(F("OFF 30mS"));
+	}
+	break;
+
+      case WAITING_30:  // waiting for 30mS with power off
+	if (millis()-callbackStart < 30)
+	  break;
+	//power has been off for 30mS
+	DCCWaveform::progTrack.setPowerMode(POWERMODE::ON); 
+	callbackState=READY;
+	break;
+
+      case READY:  // ready after read, or write after power delay and off period.
+	// power off if we powered it on
+	if (DCCWaveform::progTrack.autoPowerOff) {
+	  if (Diag::ACK)
+	    DIAG(F("Auto Prog power off"));
+	  DCCWaveform::progTrack.doAutoPowerOff();
+	}
+	// Restore <1 JOIN> to state before BASELINE
+	if (ackManagerRejoin) {
+	  setProgTrackSyncMain(true);
+	  if (Diag::ACK)
+	    DIAG(F("Auto JOIN"));
+	}
+
+	ackManagerProg=NULL;  // no more steps to execute
+	if (Diag::ACK)
+	  DIAG(F("Callback(%d)"),value);
+	(ackManagerCallback)( value);
     }
 }
+
 
 void DCC::displayCabList(Print * stream) {
 
