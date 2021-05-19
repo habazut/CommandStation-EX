@@ -904,6 +904,10 @@ void DCC::callback(int value) {
 
     switch (callbackState) {    
       case AFTER_WRITE:  // first attempt to callback after a write operation
+	if (!ackManagerRejoin && !DCCWaveform::progTrack.autoPowerOff) {
+	  callbackState=READY;
+	  break;
+	}
 	callbackStart=millis();
 	callbackState=WAITING_100;
 	if (Diag::ACK)
