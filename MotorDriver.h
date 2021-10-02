@@ -66,7 +66,7 @@ class MotorDriver {
         if (dualSignal) setHIGH(fastSignalPin2);
       }
       };*/
-    virtual void setBrake( bool on);
+    virtual void setBrake(uint8_t);
     virtual int  getCurrentRaw();
     virtual unsigned int raw2mA( int raw);
     virtual int mA2raw( unsigned int mA);
@@ -89,6 +89,7 @@ class MotorDriver {
     FASTPIN fastPowerPin,fastSignalPin, fastSignalPin2, fastBrakePin,fastFaultPin;
     bool dualSignal;       // true to use signalPin2
     bool invertBrake;       // brake pin passed as negative means pin is inverted
+    bool brakePWM;         // brake is used for PWM
     float senseFactor;
     int senseOffset;
     unsigned int tripMilliamps;
