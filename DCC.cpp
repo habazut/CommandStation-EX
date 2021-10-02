@@ -56,13 +56,18 @@ void DCC::begin(const FSH * motorShieldName, MotorDriver * mainDriver, MotorDriv
   (void)EEPROM; // tell compiler not to warn this is unused
   EEStore::init();
 
-  DCCWaveform::begin(mainDriver,progDriver); 
+  DCCWaveform::begin(mainDriver,progDriver);
+
 #ifdef DCdistrict
-  DCCWaveform::mainTrack.pwmSpeed(0);
+//  pinMode(D2,OUTPUT); //D2 lowest internal number (GPIO4)
+//  analogWrite(D2,10);
+  analogWriteFreq(100);
+  DCCWaveform::mainTrack.setPowerMode(POWERMODE::OFF);
+//  DCCWaveform::mainTrack.pwmSpeed(0);
 #else
-  DCCWaveform::mainTrack.pwmSpeed(255);
+  //DCCWaveform::mainTrack.pwmSpeed(255);
 #endif
-  DCCWaveform::progTrack.pwmSpeed(255);
+  //DCCWaveform::progTrack.pwmSpeed(255);
 }
 
 
@@ -83,7 +88,7 @@ void DCC::setThrottle( uint16_t cab, uint8_t tSpeed, bool tDirection)  {
   #error fooar
 #endif
   byte speedCode = (tSpeed & 0x7F)  + tDirection * 128; 
-  setThrottle2(cab, speedCode);
+//  setThrottle2(cab, speedCode);
   // retain speed for loco reminders
   updateLocoReminder(cab, speedCode );
 }

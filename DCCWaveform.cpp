@@ -51,7 +51,7 @@ void DCCWaveform::begin(MotorDriver * mainDriver, MotorDriver * progDriver) {
     DIAG(F("Signal pin config: high accuracy waveform"));
   else
     DIAG(F("Signal pin config: normal accuracy waveform"));
-  DCCTimer::begin(DCCWaveform::interruptHandler);     
+  // XXX DCCTimer::begin(DCCWaveform::interruptHandler);     
 }
 
 #ifdef SLOW_ANALOG_READ

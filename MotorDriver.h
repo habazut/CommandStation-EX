@@ -51,7 +51,7 @@ class MotorDriver {
   public:
     MotorDriver(byte power_pin, byte signal_pin, byte signal_pin2, int8_t brake_pin, 
                 byte current_pin, float senseFactor, unsigned int tripMilliamps, byte faultPin);
-    virtual void setPower( bool on);
+    void setPower( bool on);
     void setSignal( bool high);/* {
       if (usePWM) {
 	DCCTimer::setPWM(signalPin,high);
@@ -66,7 +66,7 @@ class MotorDriver {
         if (dualSignal) setHIGH(fastSignalPin2);
       }
       };*/
-    virtual void setBrake(uint8_t);
+    void setBrake(uint8_t);
     virtual int  getCurrentRaw();
     virtual unsigned int raw2mA( int raw);
     virtual int mA2raw( unsigned int mA);
@@ -94,6 +94,9 @@ class MotorDriver {
     int senseOffset;
     unsigned int tripMilliamps;
     int rawCurrentTripValue;
+#ifdef DCdistrict
+    bool directionDC;
+#endif
 #if defined(ARDUINO_TEENSY40) || defined(ARDUINO_TEENSY41)
     static bool disableInterrupts() {
       uint32_t primask;

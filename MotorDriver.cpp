@@ -17,6 +17,7 @@
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <Arduino.h>
+#include "config.h"
 #include "MotorDriver.h"
 #include "DCCTimer.h"
 #include "DIAG.h"
@@ -82,6 +83,9 @@ bool MotorDriver::isPWMCapable() {
 
 
 void MotorDriver::setPower(bool on) {
+  if (on) return;
+  setBrake(255);
+  /*
   if (on) {
     // toggle brake before turning power on - resets overcurrent error
     // on the Pololu board if brake is wired to ^D2.
@@ -93,6 +97,7 @@ void MotorDriver::setPower(bool on) {
     setHIGH(fastPowerPin);
   }
   else setLOW(fastPowerPin);
+  */
 }
 
 // setBrake applies brake if on == true. So to get
@@ -104,6 +109,16 @@ void MotorDriver::setPower(bool on) {
 // compensate for that.
 //
 void MotorDriver::setBrake(uint8_t intensity) {
+  DIAG(F("p=%d p2=%d dir=%d intensity=%d"),signalPin, signalPin2, directionDC, intensity);
+  if (signalPin == UNUSED_PIN) return;
+  if (signalPin2 == UNUSED_PIN) return;
+  uint8_t speed = 255 - intensity;
+  if (directionDC) {
+    analogWrite(signalPin, speed);
+  } else {
+    analogWrite(signalPin2, speed);
+  }
+/*
   if (brakePin == UNUSED_PIN) return;
   DIAG(F("Brake pin=%d val=%d"),brakePin,intensity);
   if (invertBrake)
@@ -126,13 +141,20 @@ void MotorDriver::setBrake(uint8_t intensity) {
   }
   brakePWM = true;
   analogWrite(brakePin, intensity);
+*/
 }
 
 void IRAM_ATTR MotorDriver::setSignal( bool high) {
+  DIAG(F("dirDC=%d newDir=%d"),directionDC, high);
+  if (directionDC == high) return; // no change
+  directionDC = high;
+  // direction change. All stop
+  analogWrite(signalPin2, 0);
+  analogWrite(signalPin, 0);
+   /*
    if (usePWM) {
-    DCCTimer::setPWM(signalPin,high);
-   }
-   else {
+     DCCTimer::setPWM(signalPin,high);
+   } else {
      if (high) {
         setHIGH(fastSignalPin);
         if (dualSignal) setLOW(fastSignalPin2);
@@ -142,6 +164,7 @@ void IRAM_ATTR MotorDriver::setSignal( bool high) {
         if (dualSignal) setHIGH(fastSignalPin2);
      }
    }
+   */
 }
 
 #if defined(ARDUINO_TEENSY32) || defined(ARDUINO_TEENSY35)|| defined(ARDUINO_TEENSY36)

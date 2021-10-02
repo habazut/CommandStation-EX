@@ -22,7 +22,7 @@
 //
 #if defined (ARDUINO_ARCH_ESP8266)
 #define ESP_FAMILY
-//#define ESP_DEBUG
+#define ESP_DEBUG
 #define SLOW_ANALOG_READ
 #endif
 

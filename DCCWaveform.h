@@ -124,8 +124,8 @@ class DCCWaveform {
   inline void pwmSpeed(uint8_t tSpeed, bool tDirection) {
     if (!motorDriver)
       return;
-    pwmSpeed(tSpeed);
     motorDriver->setSignal(tDirection);
+    pwmSpeed(tSpeed);
   }
 #endif
 

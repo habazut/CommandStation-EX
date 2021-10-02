@@ -33,7 +33,8 @@
 static std::vector<AsyncClient*> clients; // a list to hold all clients
 static AsyncServer *server;
 
-static RingStream *outboundRing = new RingStream(2048);
+static RingStream *inboundRing = new RingStream(1000);
+static RingStream *outboundRing = new RingStream(2000);
 
 static void handleError(void* arg, AsyncClient* client, int8_t error) {
   DIAG(F("connection error %s from client %s"), client->errorToString(error), client->remoteIP().toString().c_str());
@@ -46,12 +47,17 @@ static void handleData(void* arg, AsyncClient* client, void *data, size_t len) {
     if (clients[clientId] == client) break;
   }
   if (clientId < clients.size()) {
-    byte cmd[len+1];
-    memcpy(cmd,data,len);
-    cmd[len]=0;
-    outboundRing->mark(clientId);
-    CommandDistributor::parse(clientId,cmd,outboundRing);
-    outboundRing->commit();
+    if (inboundRing->freeSpace() <= len+1) {
+      // no chance
+      DIAG(F("handleData: inboundRing full"));
+      return;
+    }
+    inboundRing->mark(clientId);
+    for(int i=0; i<len; i++)
+      inboundRing->write(((char *)data)[i]);
+    inboundRing->write('0');
+    inboundRing->commit();
+
   }
 }
 
@@ -209,9 +215,24 @@ bool WifiESP::setup(const char *SSid,
 
 void WifiESP::loop() {
   AsyncClient *client = NULL;
+  int clientId;
+  
+  // if something waiting to execute, we can call it 
+  clientId=inboundRing->peek();
+  if (clientId>=0) {
+    inboundRing->read();
+    int count=inboundRing->count();
+    byte cmd[count+1];
+    for (int i=0;i<count;i++) cmd[i]=inboundRing->read();   
+    cmd[count]=0;
+    outboundRing->mark(clientId);  // remember start of outbound data 
+    CommandDistributor::parse(clientId,cmd,outboundRing);
+    outboundRing->commit();
+  }
+
   // Do something with outboundRing
   // call sendData
-  int clientId=outboundRing->peek();
+  clientId=outboundRing->peek();
   if (clientId >= 0) {
     if (clientId > clients.size()) {
       // something is wrong with the ringbuffer position
