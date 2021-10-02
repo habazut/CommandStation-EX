@@ -47,7 +47,7 @@ static void handleData(void* arg, AsyncClient* client, void *data, size_t len) {
     if (clients[clientId] == client) break;
   }
   if (clientId < clients.size()) {
-    if (inboundRing->freeSpace() <= len+1) {
+    if (inboundRing->freeSpace() <= len+4) {
       // no chance
       DIAG(F("handleData: inboundRing full"));
       return;
