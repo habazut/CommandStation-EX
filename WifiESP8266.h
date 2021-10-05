@@ -17,8 +17,8 @@
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef WifiESP_h
-#define WifiESP_h
+#ifndef WifiESP8266_h
+#define WifiESP8266_h
 
 #include "FSH.h"
 

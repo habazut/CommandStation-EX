@@ -31,8 +31,8 @@
 #include "DCCEXParser.h"
 #include "version.h"
 #include "WifiInterface.h"
-#ifdef ESP_FAMILY
-#include "WifiESP.h"
+#if defined(ARDUINO_ARCH_ESP8266)
+#include "WifiESP8266.h"
 #endif
 #if ETHERNET_ON == true
 #include "EthernetInterface.h"

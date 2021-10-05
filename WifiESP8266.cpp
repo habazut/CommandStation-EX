@@ -24,7 +24,7 @@
 #include <vector>
 #include <string>
 
-#include "WifiESP.h"
+#include "WifiESP8266.h"
 #include "DIAG.h"
 #include "RingStream.h"
 #include "CommandDistributor.h"
