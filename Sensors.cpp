@@ -68,7 +68,9 @@ decide to ignore the <q ID> return and only react to <Q ID> triggers.
 
 #include "StringFormatter.h"
 #include "Sensors.h"
+#ifdef USE_EESTORE
 #include "EEStore.h"
+#endif
 #include "IODevice.h"
 
 
@@ -275,7 +277,7 @@ bool Sensor::remove(int n){
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
+#ifdef USE_EEPROM
 void Sensor::load(){
   struct SensorData data;
   Sensor *tt;
@@ -303,7 +305,7 @@ void Sensor::store(){
     EEStore::eeStore->data.nSensors++;
   }
 }
-
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 
 Sensor *Sensor::firstSensor=NULL;

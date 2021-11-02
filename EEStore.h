@@ -17,6 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
+#ifdef USE_EEPROM
 #ifndef EEStore_h
 #define EEStore_h
 
@@ -52,3 +53,4 @@ struct EEStore{
 };
 
 #endif
+#endif // USE_EEPROM
