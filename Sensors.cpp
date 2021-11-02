@@ -87,6 +87,14 @@ decide to ignore the <q ID> return and only react to <Q ID> triggers.
 // second part of the list is determined from by the 'firstPollSensor' pointer.
 ///////////////////////////////////////////////////////////////////////////////
 
+bool Sensor::check(VPIN pin) {
+  Sensor *tt;
+  for(tt=firstSensor; tt!=NULL && tt->data.pin!=pin; tt=tt->nextSensor);
+  if (tt)
+    return tt->active;
+  return false;
+}
+
 void Sensor::checkAll(Print *stream){
   uint16_t sensorCount = 0;
 
