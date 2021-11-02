@@ -18,7 +18,7 @@
  */
 #ifndef DIAG_h
 #define DIAG_h
-#define DIAG_IO
+
 #include "StringFormatter.h"
 #define DIAG  StringFormatter::diag
 #define LCD   StringFormatter::lcd
