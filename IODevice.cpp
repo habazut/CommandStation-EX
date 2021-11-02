@@ -23,7 +23,7 @@
 #include "DIAG.h" 
 #include "FSH.h"
 #include "IO_MCP23017.h"
-#define DIAG_IO
+
 #if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_MEGAAVR)
 #define USE_FAST_IO
 #endif
@@ -289,9 +289,9 @@ int IODevice::readAnalogue(VPIN vpin) {
 
 void IODevice::begin() { DIAG(F("NO HAL CONFIGURED!")); }
 bool IODevice::configure(VPIN pin, ConfigTypeEnum, int, int p[]) {
-  #ifdef DIAG_IO
+#ifdef DIAG_IO
   DIAG(F("Arduino _configurePullup Pin:%d Val:%d"), pin, p[0]);
-  #endif
+#endif
   if (p[0]) {
     pinMode(pin, INPUT_PULLUP);
   } else {
@@ -355,9 +355,9 @@ bool ArduinoPins::_configure(VPIN vpin, ConfigTypeEnum configType, int paramCoun
   bool pullup = params[0];
 
   int pin = vpin;
-  #ifdef DIAG_IO
+#ifdef DIAG_IO
   DIAG(F("Arduino _configurePullup Pin:%d Val:%d"), pin, pullup);
-  #endif
+#endif
   uint8_t mask = 1 << ((pin-_firstVpin) % 8);
   uint8_t index = (pin-_firstVpin) / 8;
   _pinModes[index] &= ~mask;  // set to input mode
@@ -375,9 +375,9 @@ bool ArduinoPins::_configure(VPIN vpin, ConfigTypeEnum configType, int paramCoun
 // Device-specific write function.
 void ArduinoPins::_write(VPIN vpin, int value) {
   int pin = vpin;
-  #ifdef DIAG_IO
+#ifdef DIAG_IO
   DIAG(F("Arduino Write Pin:%d Val:%d"), pin, value);
-  #endif
+#endif
   uint8_t mask = 1 << ((pin-_firstVpin) % 8);
   uint8_t index = (pin-_firstVpin) / 8;
   // First update the output state, then set into write mode if not already.
@@ -408,9 +408,9 @@ int ArduinoPins::_read(VPIN vpin) {
   }
   int value = !fastReadDigital(pin); // Invert (5v=0, 0v=1)
 
-  #ifdef DIAG_IO
-  //DIAG(F("Arduino Read Pin:%d Value:%d"), pin, value);
-  #endif
+#ifdef DIAG_IO
+  DIAG(F("Arduino Read Pin:%d Value:%d"), pin, value);
+#endif
   return value;
 }
 
@@ -442,9 +442,9 @@ int ArduinoPins::_readAnalogue(VPIN vpin) {
   int value = analogRead(pin);
   interrupts();
 
-  #ifdef DIAG_IO
+#ifdef DIAG_IO
   DIAG(F("Arduino Read Pin:%d Value:%d"), pin, value);
-  #endif
+#endif
   return value;
 }
 
