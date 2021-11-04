@@ -220,8 +220,19 @@ const bool DCCWaveform::signalTransform[]={
    /* WAVE_MID_0   -> */ LOW,
    /* WAVE_LOW_0   -> */ LOW,
    /* WAVE_PENDING (should not happen) -> */ LOW};
-        
+
+uint16_t timervals[1024];
+uint16_t bitCounter = 0;
+
 void IRAM_ATTR DCCWaveform::interrupt2() {
+
+  if (ackPending) {
+    timervals[bitCounter++] = DCCTimer::readRaw();
+    timervals[bitCounter] = 20000;
+    if (remainingPreambles == requiredPreambles - 1 || bitCounter == 1000)
+      bitCounter = 0;
+  }
+  
   // calculate the next bit to be sent:
   // set state WAVE_MID_1  for a 1=bit
   //        or WAVE_HIGH_0 for a 0 bit.
@@ -329,8 +340,15 @@ void DCCWaveform::setAckPending() {
 
 byte DCCWaveform::getAck() {
       if (ackPending) return (2);  // still waiting
-      if (Diag::ACK) DIAG(F("%S after %dmS max=%d/%dmA pulse=%duS samples=%d gaps=%d"),ackDetected?F("ACK"):F("NO-ACK"), ackCheckDuration,
-			  ackMaxCurrent,motorDriver->raw2mA(ackMaxCurrent), ackPulseDuration, numAckSamples, numAckGaps);
+      if (Diag::ACK) {
+	DIAG(F("%S after %dmS max=%d/%dmA pulse=%duS samples=%d gaps=%d"),ackDetected?F("ACK"):F("NO-ACK"), ackCheckDuration,
+	     ackMaxCurrent,motorDriver->raw2mA(ackMaxCurrent), ackPulseDuration, numAckSamples, numAckGaps);
+	for(uint16_t i=0;i<1000;i++) {
+	  if(timervals[i] == 20000)
+	    break;
+	  DIAG(F("%d %d"),i, timervals[1]);
+	}
+      }
       if (ackDetected) return (1); // Yes we had an ack
       return(0);  // pending set off but not detected means no ACK.   
 }

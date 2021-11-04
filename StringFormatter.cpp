@@ -100,6 +100,7 @@ void StringFormatter::send2(Print * stream,const FSH* format, va_list args) {
       case 'S': stream->print((const FSH*)va_arg(args, char*)); break;
       case 'd': printPadded(stream,va_arg(args, int), formatWidth, formatLeft); break;
       case 'l': printPadded(stream,va_arg(args, long), formatWidth, formatLeft); break;
+      case 'L': printPadded(stream,va_arg(args, uint64_t), formatWidth, formatLeft); break;
       case 'b': stream->print(va_arg(args, int), BIN); break;
       case 'o': stream->print(va_arg(args, int), OCT); break;
       case 'x': stream->print(va_arg(args, int), HEX); break;

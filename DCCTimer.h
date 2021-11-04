@@ -34,7 +34,13 @@ class DCCTimer {
   static void read_mac(byte mac[6]);
   static void read(uint8_t word, uint8_t *mac, uint8_t offset);
 #endif
+#if (defined(ARDUINO_ARCH_ESP32))
+  static uint64_t readRaw();
+#endif
   private:
+#if (defined(ARDUINO_ARCH_ESP32))
+  static hw_timer_t *_timer;
+#endif
 };
 
 #if defined(ARDUINO_ARCH_ESP32)

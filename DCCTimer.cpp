@@ -42,6 +42,9 @@
  *  
  */
 
+//#include <driver/timer.h>
+
+#include "DIAG.h"
 #include "DCCTimer.h"
 const int DCC_SIGNAL_TIME=58;  // this is the 58uS DCC 1-bit waveform half-cycle 
 const long CLOCK_CYCLES=(F_CPU / 1000000 * DCC_SIGNAL_TIME);
@@ -172,15 +175,31 @@ void IRAM_ATTR DCCTimer::setPWM(byte pin, bool high) {
 #elif defined(ARDUINO_ARCH_ESP32)
 // https://www.visualmicro.com/page/Timer-Interrupts-Explained.aspx
 
+
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+
+hw_timer_t *DCCTimer::_timer = NULL;
+
+uint64_t DCCTimer::readRaw() {
+  return timerRead(_timer);
+}
 
 void DCCTimer::begin(INTERRUPT_CALLBACK callback) {
   interruptHandler = callback;
   hw_timer_t *timer = NULL;
   timer = timerBegin(0, 2, true); // prescaler can be 2 to 65536 so choose 2
+  _timer = timer;
   timerAttachInterrupt(timer, interruptHandler, true);
+  //timer_isr_register(TIMER_GROUP_0,TIMER_0,(void (*)(void*))interruptHandler,NULL,ESP_INTR_FLAG_IRAM|ESP_INTR_FLAG_LEVEL3,NULL);
   timerAlarmWrite(timer, CLOCK_CYCLES / 6, true); // divide by prescaler*3 (Clockbase is 80Mhz and not F_CPU 240Mhz)
+  DIAG(F("Alarm value: %L Current counter value %L"), timerAlarmRead(timer), timerRead(timer));
   timerAlarmEnable(timer);
+  DIAG(F("Current counter value %L"), timerRead(timer));
+  int i=1000;
+  while (i--) {
+    timerRead(timer);
+  }
+  DIAG(F("Current counter value %L"), timerRead(timer));
 }
 
 // We do not support to use PWM to make the Waveform on ESP
