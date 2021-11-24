@@ -45,6 +45,9 @@
 #elif defined(LCD_DRIVER)
   #define CONDITIONAL_LCD_START for (DisplayInterface * dummy=new LiquidCrystal_I2C(LCD_DRIVER);dummy!=NULL; dummy=dummy->loop2(true))
 
+#elif defined(ADAFRUIT_LCD_DRIVER)
+  #define CONDITIONAL_LCD_START for (DisplayInterface * dummy=new AdafruitLCD_I2C(ADAFRUIT_LCD_DRIVER);dummy!=NULL; dummy=dummy->loop2(true))
+
 #else
   // Create null display handler just in case someone calls lcdDisplay->something without checking if lcdDisplay is NULL!
   #define CONDITIONAL_LCD_START { new DisplayInterface(); }
