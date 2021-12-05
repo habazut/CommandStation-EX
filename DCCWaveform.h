@@ -57,6 +57,9 @@ class DCCWaveform {
     void setPowerMode(POWERMODE);
     POWERMODE getPowerMode();
     void checkPowerOverload(bool ackManagerActive);
+    inline bool needReminder() {
+      return !packetPending;
+    };
     inline int get1024Current() {
 	  if (powerMode == POWERMODE::ON)
 	      return (int)(lastCurrent*(long int)1024/motorDriver->getRawCurrentTripValue());

@@ -27,7 +27,7 @@
 #include "FSH.h"
 #include "IODevice.h"
 
-#include "MotorDriver.h"
+#include "MotorDriverContainer.h"
 
 // This module is responsible for converting API calls into
 // messages to be sent to the waveform generator.
@@ -590,7 +590,8 @@ void DCC::loop()  {
 
 void DCC::issueReminders() {
   // if the main track transmitter still has a pending packet, skip this time around.
-  if ( DCCWaveform::mainTrack.packetPending) return;
+  //if ( DCCWaveform::mainTrack.packetPending) return;
+  if ( !DCCTrack::mainTrack.needReminder()) return;
 
   // This loop searches for a loco in the speed table starting at nextLoco and cycling back around
   for (int reg=0;reg<MAX_LOCOS;reg++) {

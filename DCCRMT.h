@@ -46,6 +46,9 @@ class RMTChannel {
   bool schedulePacket(dccPacket packet);
   void loop();
   void addSignalPin(byte pin);
+  inline bool needReminder() {
+    return outQueue.size() == 0;
+  };
   static RMTChannel mainRMTChannel;
   static RMTChannel progRMTChannel;
   

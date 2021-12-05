@@ -20,6 +20,7 @@
 #include "config.h"
 #include "defines.h"
 #include "MotorDriver.h"
+#include "MotorDriverContainer.h"
 #include "DCCTimer.h"
 #include "DIAG.h"
 #if defined(ARDUINO_ARCH_ESP32)
@@ -29,7 +30,6 @@
 
 bool MotorDriver::usePWM=false;
 bool MotorDriver::commonFaultPin=false;
-MotorDriverContainer MotorDriverContainer::mDC(MOTOR_SHIELD_TYPE);
        
 MotorDriver::MotorDriver(byte power_pin, byte signal_pin, byte signal_pin2, int8_t brake_pin,
                          byte current_pin, float sense_factor, unsigned int trip_milliamps, byte fault_pin,
@@ -65,13 +65,12 @@ MotorDriver::MotorDriver(byte power_pin, byte signal_pin, byte signal_pin2, int8
       dualSignal=false;
     }
     // Register at the timer generated waveform
-    /*    byte isMain = (dtype & TIMER_MAIN)!=0;
+    byte isMain = (dtype & TIMER_MAIN)!=0;
     if (MotorDriverContainer::mDC.dccWaveform[isMain] == NULL) {
       MotorDriverContainer::mDC.dccWaveform[isMain] = new DCCWaveform(isMain?PREAMBLE_BITS_MAIN:PREAMBLE_BITS_PROG,
 								      isMain); // true: isMain
     } else
-      DIAG(F("More than one TIMER Waveform per MAIN/PROG not supported");
-    */
+      DIAG(F("More than one TIMER Waveform per MAIN/PROG not supported"));
   }
 	
   brakePin=brake_pin;
@@ -222,48 +221,3 @@ void  MotorDriver::getFastPin(const FSH* type,int pin, bool input, FASTPIN & res
     result.maskLOW = ~result.maskHIGH;
     // DIAG(F(" port=0x%x, inoutpin=0x%x, isinput=%d, mask=0x%x"),port, result.inout,input,result.maskHIGH);
 }
-
-MotorDriverContainer::MotorDriverContainer(const FSH * motorShieldName,
-					   MotorDriver *m0,
-					   MotorDriver *m1,
-					   MotorDriver *m2,
-					   MotorDriver *m3,
-					   MotorDriver *m4,
-					   MotorDriver *m5,
-					   MotorDriver *m6,
-					   MotorDriver *m7) {
-  // THIS AUTOMATIC DOES NOT WORK YET. TIMER_MAIN AND TIMER_PROG required in CONSTRUCTOR
-  // AND CAN NOT BE ADDED LATER
-  if (m0) {
-    if (m0->type() == TYPE_UNKNOWN)
-      m0->setType(TIMER_MAIN);
-    mD.push_back(m0);
-  }
-  if (m1) {
-    if (m1->type() == TYPE_UNKNOWN)
-      m1->setType(TIMER_PROG);
-    mD.push_back(m1);
-  }
-  if (m2) mD.push_back(m2);
-  if (m3) mD.push_back(m3);
-  if (m4) mD.push_back(m4);
-  if (m5) mD.push_back(m5);
-  if (m6) mD.push_back(m6);
-  if (m7) mD.push_back(m7);
-  shieldName = (FSH *)motorShieldName;
-}
-
-void MotorDriverContainer::loop() {
-  if (rmtChannel[0]) rmtChannel[0]->loop();
-  if (rmtChannel[1]) rmtChannel[1]->loop();
-}
-
-std::vector<MotorDriver*> MotorDriverContainer::getDriverType(driverType t) {
-  std::vector<MotorDriver*> v;
-  for(const auto& d: mD){
-    if (d->type() & t)
-      v.push_back(d);
-  }
-  return v;
-}
-

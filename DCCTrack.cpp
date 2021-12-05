@@ -27,3 +27,11 @@ void DCCTrack::schedulePacket(dccPacket packet) {
   if (rmtchannel) rmtchannel->schedulePacket(packet);
   if (waveform) waveform->schedulePacket(packet);
 }
+
+bool DCCTrack::needReminder() {
+  if (waveform && waveform->needReminder())
+    return true;
+  if (rmtchannel && rmtchannel->needReminder())
+    return true;
+  return false;
+}

@@ -16,6 +16,7 @@ class DCCTrack {
   inline void add(RMTChannel *c) {
     rmtchannel = c;
   };
+  bool needReminder();
   static DCCTrack mainTrack;
   static DCCTrack progTrack;
  private:

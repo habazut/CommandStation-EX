@@ -30,8 +30,8 @@
 // The two Waveforms which defines what happens when the
 // interrupt driven DCC signal is generated. This is tied
 // to the timer interrupts of the hardware.
-DCCWaveform  DCCWaveform::mainTrack(PREAMBLE_BITS_MAIN, true);
-DCCWaveform  DCCWaveform::progTrack(PREAMBLE_BITS_PROG, false);
+//DCCWaveform  DCCWaveform::mainTrack(PREAMBLE_BITS_MAIN, true);
+//DCCWaveform  DCCWaveform::progTrack(PREAMBLE_BITS_PROG, false);
 
 
 // The two different DCC _kinds_ of signals we want to be able
