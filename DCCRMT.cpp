@@ -19,6 +19,7 @@
 
 #include "config.h"
 #include "defines.h"
+#include "DCCTrack.h"
 #if defined(ARDUINO_ARCH_ESP32)
 #include "DIAG.h"
 #include "DCCRMT.h"
@@ -110,13 +111,6 @@ RMTChannel::RMTChannel(byte pin, byte ch, byte plen, bool isMain) {
                             // 2 mem block of 64 RMT items should be enough
 
   ESP_ERROR_CHECK(rmt_config(&config));
-  /*
-  // test: config another gpio pin
-  gpio_num_t gpioNum = (gpio_num_t)(pin-1);
-  PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpioNum], PIN_FUNC_GPIO);
-  gpio_set_direction(gpioNum, GPIO_MODE_OUTPUT);
-  gpio_matrix_out(gpioNum, RMT_SIG_OUT0_IDX, 0, 0);
-  */
   
   // NOTE: ESP_INTR_FLAG_IRAM is *NOT* included in this bitmask
   ESP_ERROR_CHECK(rmt_driver_install(config.channel, 0, ESP_INTR_FLAG_LOWMED|ESP_INTR_FLAG_SHARED));
@@ -136,6 +130,20 @@ RMTChannel::RMTChannel(byte pin, byte ch, byte plen, bool isMain) {
   preambleNext = true;
   dataReady = false;
   RMTinterrupt();
+  // register the channel in the right track so that
+  // the track can schedule packets to us
+  if (isMain)
+    DCCTrack::mainTrack.add(this);
+  else
+    DCCTrack::progTrack.add(this);
+}
+
+void RMTChannel::addSignalPin(byte pin){
+  // config another gpio pin
+  gpio_num_t gpioNum = (gpio_num_t)(pin);
+  PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpioNum], PIN_FUNC_GPIO);
+  gpio_set_direction(gpioNum, GPIO_MODE_OUTPUT);
+  gpio_matrix_out(gpioNum, RMT_SIG_OUT0_IDX, 0, 0);
 }
 
 void RMTChannel::RMTprefill() {
@@ -192,3 +200,18 @@ void IRAM_ATTR RMTChannel::RMTinterrupt() {
   return;
 }
 #endif //ESP32
+
+bool RMTChannel::schedulePacket(dccPacket packet) {
+  uint16_t size = outQueue.size();
+  if (size > 10) {
+    DIAG(F("Warning: outQueue %d > 10"),size);
+    return false;
+  }
+  outQueue.push(packet);
+  return true;
+}
+
+void RMTChannel::loop() {
+  if (RMTfillData(outQueue.front()))
+    outQueue.pop();
+}

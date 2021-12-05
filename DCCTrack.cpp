@@ -3,8 +3,9 @@
 #include "DCCTrack.h"
 #include "DIAG.h"
 
-DCCTrack::DCCTrack(DCCWaveform *w) {
-  waveform = w;
+DCCTrack::DCCTrack(byte b) {
+  waveform = NULL;
+  rmtchannel = NULL;
 }
 
 void DCCTrack::schedulePacket(const byte buffer[], byte byteCount, byte repeats) {
@@ -23,16 +24,6 @@ void DCCTrack::schedulePacket(const byte buffer[], byte byteCount, byte repeats)
 };
 
 void DCCTrack::schedulePacket(dccPacket packet) {
-  bool once=true;
-  for (const auto& driver: mD) {
-    if (driver->type() == RMT_MAIN || driver->type() == RMT_PROG) {
-      //DIAG(F("DCCTrack::schedulePacket RMT l=%d d=%x"),packet.length, packet.data[0]);
-      driver->schedulePacket(packet);
-    }
-    if (driver->type() & (TIMER_MAIN | TIMER_PROG) && waveform && once) {
-      //DIAG(F("DCCTrack::schedulePacket WAVE l=%d d=%x"),packet.length, packet.data[0]);
-      waveform->schedulePacket(packet);
-      once=false;
-    }
-  }
+  if (rmtchannel) rmtchannel->schedulePacket(packet);
+  if (waveform) waveform->schedulePacket(packet);
 }

@@ -29,6 +29,7 @@
 
 bool MotorDriver::usePWM=false;
 bool MotorDriver::commonFaultPin=false;
+MotorDriverContainer MotorDriverContainer::mDC(MOTOR_SHIELD_TYPE);
        
 MotorDriver::MotorDriver(byte power_pin, byte signal_pin, byte signal_pin2, int8_t brake_pin,
                          byte current_pin, float sense_factor, unsigned int trip_milliamps, byte fault_pin,
@@ -38,12 +39,18 @@ MotorDriver::MotorDriver(byte power_pin, byte signal_pin, byte signal_pin2, int8
   getFastPin(F("POWER"),powerPin,fastPowerPin);
   pinMode(powerPin, OUTPUT);
 
-  if (dtype == RMT_MAIN) {
+  if (dtype & (RMT_MAIN | RMT_PROG)) {
     signalPin=signal_pin;
-#if defined(ARDUINO_ARCH_ESP32)
-    rmtChannel = new RMTChannel(signalPin, true); // true: isMain
-#endif
+    // dual not supported with RMT, sorry
     dualSignal=false;
+#if defined(ARDUINO_ARCH_ESP32)
+    // create/register RMT channel which makes waveform
+    byte isMain = (dtype & RMT_MAIN)!=0;
+    if (MotorDriverContainer::mDC.rmtChannel[isMain] == NULL) {
+      MotorDriverContainer::mDC.rmtChannel[isMain] = new RMTChannel(signalPin, isMain); // true: isMain
+    } else
+      MotorDriverContainer::mDC.rmtChannel[isMain]->addSignalPin(signalPin);
+#endif
   } else if (dtype & (TIMER_MAIN | TIMER_PROG)) {
     signalPin=signal_pin;
     getFastPin(F("SIG"),signalPin,fastSignalPin);
@@ -57,8 +64,16 @@ MotorDriver::MotorDriver(byte power_pin, byte signal_pin, byte signal_pin2, int8
     }  else {
       dualSignal=false;
     }
+    // Register at the timer generated waveform
+    /*    byte isMain = (dtype & TIMER_MAIN)!=0;
+    if (MotorDriverContainer::mDC.dccWaveform[isMain] == NULL) {
+      MotorDriverContainer::mDC.dccWaveform[isMain] = new DCCWaveform(isMain?PREAMBLE_BITS_MAIN:PREAMBLE_BITS_PROG,
+								      isMain); // true: isMain
+    } else
+      DIAG(F("More than one TIMER Waveform per MAIN/PROG not supported");
+    */
   }
-  
+	
   brakePin=brake_pin;
   if (brake_pin!=UNUSED_PIN){
     invertBrake=brake_pin < 0;
@@ -208,22 +223,6 @@ void  MotorDriver::getFastPin(const FSH* type,int pin, bool input, FASTPIN & res
     // DIAG(F(" port=0x%x, inoutpin=0x%x, isinput=%d, mask=0x%x"),port, result.inout,input,result.maskHIGH);
 }
 
-bool MotorDriver::schedulePacket(dccPacket packet) {
-  if(!rmtChannel) return true; // fake success if functionality is not there
-
-  outQueue.push(packet);
-  uint16_t size = outQueue.size();
-  if (size > 10) {
-    DIAG(F("Warning: outQueue %d > 10"),size);
-  }
-  return true;
-}
-
-void MotorDriver::loop() {
-  if (rmtChannel  && !outQueue.empty() && rmtChannel->RMTfillData(outQueue.front()))
-    outQueue.pop();
-}
-
 MotorDriverContainer::MotorDriverContainer(const FSH * motorShieldName,
 					   MotorDriver *m0,
 					   MotorDriver *m1,
@@ -255,12 +254,8 @@ MotorDriverContainer::MotorDriverContainer(const FSH * motorShieldName,
 }
 
 void MotorDriverContainer::loop() {
-  // loops over MotorDrivers which have loop tasks
-  if (mD.empty())
-    return;
-  for(const auto& d: mD)
-    if (d->type() & (RMT_MAIN | RMT_PROG))
-      d->loop();
+  if (rmtChannel[0]) rmtChannel[0]->loop();
+  if (rmtChannel[1]) rmtChannel[1]->loop();
 }
 
 std::vector<MotorDriver*> MotorDriverContainer::getDriverType(driverType t) {
@@ -272,4 +267,3 @@ std::vector<MotorDriver*> MotorDriverContainer::getDriverType(driverType t) {
   return v;
 }
 
-MotorDriverContainer MotorDriverContainer::mDC(MOTOR_SHIELD_TYPE);

@@ -25,7 +25,6 @@
 #include "DIAG.h"
 
 #if defined(ARDUINO_ARCH_ESP32)
-#include <queue>
 #include "DCCRMT.h"
 #endif
 
@@ -85,10 +84,8 @@ class MotorDriver {
 	return faultPin;
     }
 #if defined(ARDUINO_ARCH_ESP32)
-    void loop();
     inline driverType type() { return dtype; };
     inline void setType(driverType t) { dtype = t; };
-    bool schedulePacket(dccPacket packet);
 #endif
 
   private:
@@ -117,7 +114,6 @@ class MotorDriver {
 #endif
 #if defined(ARDUINO_ARCH_ESP32)
   RMTChannel* rmtChannel;
-  std::queue<dccPacket> outQueue;
   driverType dtype;
 #endif
 };
@@ -159,6 +155,8 @@ public:
   };
   void loop();
   std::vector<MotorDriver*>  getDriverType(driverType t);
+  RMTChannel *rmtChannel[2];
+  //  DCCWaveform *dccWaveform[2];
 
 private:
   std::vector<MotorDriver *>mD;

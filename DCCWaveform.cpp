@@ -37,8 +37,8 @@ DCCWaveform  DCCWaveform::progTrack(PREAMBLE_BITS_PROG, false);
 // The two different DCC _kinds_ of signals we want to be able
 // to genrate at the same time. When timer interupts are used,
 // these need the respective waveform
-DCCTrack DCCTrack::mainTrack(&DCCWaveform::mainTrack);
-DCCTrack DCCTrack::progTrack(&DCCWaveform::progTrack);
+DCCTrack DCCTrack::mainTrack(0);
+DCCTrack DCCTrack::progTrack(0);
 
 bool DCCWaveform::progTrackSyncMain=false; 
 bool DCCWaveform::progTrackBoosted=false; 

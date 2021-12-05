@@ -70,11 +70,11 @@ void DCC::begin() {
   DCCWaveform::begin(MotorDriverContainer::mDC.mainTrack(),MotorDriverContainer::mDC.progTrack());
 
   // Add main and prog drivers to the main and prog packet sources (dcc-tracks).
-  std::vector<MotorDriver*>  v;
-  v = MotorDriverContainer::mDC.getDriverType(RMT_MAIN|TIMER_MAIN);
-  for (const auto& d: v) DCCTrack::mainTrack.addDriver(d);
-  v = MotorDriverContainer::mDC.getDriverType(RMT_PROG|TIMER_PROG);
-  for (const auto& d: v) DCCTrack::progTrack.addDriver(d);
+  //  std::vector<MotorDriver*>  v;
+  //v = MotorDriverContainer::mDC.getDriverType(RMT_MAIN|TIMER_MAIN);
+  //for (const auto& d: v) DCCTrack::mainTrack.addDriver(d);
+  //v = MotorDriverContainer::mDC.getDriverType(RMT_PROG|TIMER_PROG);
+  //for (const auto& d: v) DCCTrack::progTrack.addDriver(d);
 }
 
 void DCC::setJoinRelayPin(byte joinRelayPin) {

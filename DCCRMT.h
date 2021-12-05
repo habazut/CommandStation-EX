@@ -18,6 +18,7 @@
  */
 
 #pragma once
+#include <queue>
 #include <Arduino.h>
 #if defined(ARDUINO_ARCH_ESP32)
 #include "DCCPacket.h"
@@ -38,17 +39,18 @@ class RMTChannel {
     else
       RMTChannel(pin, 2, PREAMBLE_BITS_PROG, 0);
   };
-  RMTChannel(byte pin, byte ch, byte plen, bool isProg);
   void IRAM_ATTR RMTinterrupt();
   void RMTprefill();
   bool RMTfillData(dccPacket packet);
   //bool RMTfillData(const byte buffer[], byte byteCount, byte repeatCount);
-  
+  bool schedulePacket(dccPacket packet);
+  void loop();
+  void addSignalPin(byte pin);
   static RMTChannel mainRMTChannel;
   static RMTChannel progRMTChannel;
   
  private:
-    
+  RMTChannel(byte pin, byte ch, byte plen, bool isProg);
   rmt_channel_t channel;
   // 3 types of data to send, preamble and then idle or data
   // if this is prog track, idle will contain reset instead
@@ -63,5 +65,6 @@ class RMTChannel {
   volatile bool preambleNext = true;  // alternate between preamble and content
   volatile bool dataReady = false;    // do we have real data available or send idle
   volatile byte dataRepeat = 0;
+  std::queue<dccPacket> outQueue;     // queue between schedule Packet and RMTfillData
 };
 #endif //ESP32

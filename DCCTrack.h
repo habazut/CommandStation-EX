@@ -7,17 +7,20 @@
 
 class DCCTrack {
  public:
-  DCCTrack(DCCWaveform *w);
+  DCCTrack(byte b);
   void schedulePacket(const byte buffer[], byte byteCount, byte repeats);
   void schedulePacket(dccPacket packet);
-  inline void addDriver(MotorDriver *m) {
-    mD.push_back(m);
+  inline void add(DCCWaveform *w) {
+    waveform = w;
+  };
+  inline void add(RMTChannel *c) {
+    rmtchannel = c;
   };
   static DCCTrack mainTrack;
   static DCCTrack progTrack;
  private:
   DCCWaveform *waveform;
-  std::vector<MotorDriver *>mD;
+  RMTChannel *rmtchannel;
 };
 
 
