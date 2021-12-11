@@ -49,6 +49,12 @@ class RMTChannel {
   inline bool needReminder() {
     return outQueue.size() == 0;
   };
+  inline void resetProgPackCounter() {
+    sentResetsSincePacket=0; 
+  };
+  inline bool sentProgPacks(byte n) {
+    return (sentResetsSincePacket>=n);
+  };
   static RMTChannel mainRMTChannel;
   static RMTChannel progRMTChannel;
   
@@ -69,5 +75,6 @@ class RMTChannel {
   volatile bool dataReady = false;    // do we have real data available or send idle
   volatile byte dataRepeat = 0;
   std::queue<dccPacket> outQueue;     // queue between schedule Packet and RMTfillData
+  volatile byte sentResetsSincePacket = 0;
 };
 #endif //ESP32

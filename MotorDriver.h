@@ -32,6 +32,11 @@
 #define UNUSED_PIN 127 // inside int8_t
 #endif
 
+// Wait times for power management. Unit: milliseconds
+const int  POWER_SAMPLE_ON_WAIT = 100;
+const int  POWER_SAMPLE_OFF_WAIT = 1000;
+const int  POWER_SAMPLE_OVERLOAD_WAIT = 20;
+
 #if defined(__IMXRT1062__) || defined(ESP_FAMILY)
 typedef uint32_t PORTTYPE;
 struct FASTPIN {
@@ -61,7 +66,9 @@ const driverType RMT_MAIN=4;
 const driverType RMT_PROG=16;
 const driverType DC_ENA=32;
 const driverType DC_BRAKE=64;
-		  
+
+enum class POWERMODE : byte { OFF, ON, OVERLOAD };
+
 class MotorDriver {
   public:
     MotorDriver(byte power_pin, byte signal_pin, byte signal_pin2, int8_t brake_pin, 
@@ -83,6 +90,14 @@ class MotorDriver {
     inline byte getFaultPin() {
 	return faultPin;
     }
+    inline POWERMODE getPowerMode() {
+      return powerMode;
+    };
+    inline void setPowerMode(POWERMODE mode) {
+      powerMode = mode;
+      setPower(mode == POWERMODE::ON);
+    };
+    void checkPowerOverload(bool ackManagerActive);
 #if defined(ARDUINO_ARCH_ESP32)
     inline driverType type() { return dtype; };
     inline void setType(driverType t) { dtype = t; };
@@ -101,6 +116,17 @@ class MotorDriver {
     int senseOffset;
     unsigned int tripMilliamps;
     int rawCurrentTripValue;
+
+    // current sampling
+    POWERMODE powerMode;
+    unsigned long lastSampleTaken;
+    unsigned int sampleDelay;
+    // Trip current for programming track, 250mA. Change only if you really
+    // need to be non-NMRA-compliant because of decoders that are not either.
+    static const int TRIP_CURRENT_PROG=250;
+    unsigned long power_sample_overload_wait = POWER_SAMPLE_OVERLOAD_WAIT;
+    unsigned int power_good_counter = 0;
+
 #if defined(ARDUINO_TEENSY40) || defined(ARDUINO_TEENSY41)
     static bool disableInterrupts() {
       uint32_t primask;
@@ -119,3 +145,28 @@ class MotorDriver {
 };
 
 #endif
+
+/*
+    inline int get1024Current() {
+	  if (powerMode == POWERMODE::ON)
+	      return (int)(lastCurrent*(long int)1024/motorDriver->getRawCurrentTripValue());
+	  return 0;
+    }
+    inline int getCurrentmA() {
+      if (powerMode == POWERMODE::ON)
+        return motorDriver->raw2mA(lastCurrent);
+      return 0;
+    }
+    inline int getMaxmA() {
+      if (maxmA == 0) { //only calculate this for first request, it doesn't change
+        maxmA = motorDriver->raw2mA(motorDriver->getRawCurrentTripValue()); //TODO: replace with actual max value or calc
+      }
+      return maxmA;        
+    }
+    inline int getTripmA() { 
+      if (tripmA == 0) { //only calculate this for first request, it doesn't change
+        tripmA = motorDriver->raw2mA(motorDriver->getRawCurrentTripValue());
+      }
+      return tripmA;        
+    }
+*/

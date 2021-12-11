@@ -55,7 +55,6 @@ void DCCWaveform::begin(MotorDriver * mainDriver, MotorDriver * progDriver) {
   }
   if(progDriver) {
     progTrack.motorDriver=progDriver;
-    progTripValue = progDriver->mA2raw(TRIP_CURRENT_PROG); // need only calculate once hence static
     progTrack.setPowerMode(POWERMODE::OFF);
   }
   if(mainDriver && progDriver) {
@@ -79,12 +78,6 @@ volatile bool ackflag = 0;
 
 void IRAM_ATTR DCCWaveform::loop(bool ackManagerActive) {
 
-  //if (mainTrack.packetPendingRMT) {
-  //  mainTrack.rmtPin->RMTfillData(mainTrack.pendingPacket, mainTrack.pendingLength, mainTrack.pendingRepeats);
-  //  mainTrack.packetPendingRMT=false;
-    // sentResetsSincePacket = 0 // later when progtrack
-  //}
-
 #ifdef SLOW_ANALOG_READ
   if (ackflag) {
     progTrack.checkAck();
@@ -93,12 +86,12 @@ void IRAM_ATTR DCCWaveform::loop(bool ackManagerActive) {
     ackflag = 0;
     portEXIT_CRITICAL(&timerMux);
   } else {
-    progTrack.checkPowerOverload(ackManagerActive);
+    /*progTrack.checkPowerOverload(ackManagerActive);*/
   }
 #else
-  progTrack.checkPowerOverload(ackManagerActive);
+  /*progTrack.checkPowerOverload(ackManagerActive);*/
 #endif
-  mainTrack.checkPowerOverload(false);
+  /*mainTrack.checkPowerOverload(false);*/
 }
 
 #pragma GCC push_options
@@ -147,7 +140,6 @@ const byte bitMask[] = {0x00, 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 DCCWaveform::DCCWaveform( byte preambleBits, bool isMain) {
   isMainTrack = isMain;
   packetPending = false;
-  packetPendingRMT = false;
   memcpy(transmitPacket, idlePacket, sizeof(idlePacket));
   state = WAVE_START;
   // The +1 below is to allow the preamble generator to create the stop bit
@@ -159,20 +151,7 @@ DCCWaveform::DCCWaveform( byte preambleBits, bool isMain) {
   lastSampleTaken = millis();
   ackPending=false;
 }
-
-POWERMODE DCCWaveform::getPowerMode() {
-  return powerMode;
-}
-
-void DCCWaveform::setPowerMode(POWERMODE mode) {
-  powerMode = mode;
-  bool ison = (mode == POWERMODE::ON);
-  if (motorDriver)
-    motorDriver->setPower( ison);
-  sentResetsSincePacket=0; 
-}
-
-
+/*x
 void DCCWaveform::checkPowerOverload(bool ackManagerActive) {
   if (!motorDriver) return;
   if (millis() - lastSampleTaken  < sampleDelay) return;
@@ -238,6 +217,7 @@ void DCCWaveform::checkPowerOverload(bool ackManagerActive) {
       sampleDelay = 999; // cant get here..meaningless statement to avoid compiler warning.
   }
 }
+*/
 // For each state of the wave  nextState=stateTransform[currentState] 
 const WAVE_STATE DCCWaveform::stateTransform[]={
    /* WAVE_START   -> */ WAVE_PENDING,
@@ -335,7 +315,6 @@ void DCCWaveform::schedulePacket(const byte buffer[], byte byteCount, byte repea
   pendingLength = byteCount /*+ 1*/;
   pendingRepeats = repeats;
   packetPending = true;
-  packetPendingRMT = true;
   sentResetsSincePacket=0;
   portEXIT_CRITICAL(&timerMux);
 }

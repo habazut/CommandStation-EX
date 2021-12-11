@@ -58,6 +58,8 @@ MotorDriverContainer::MotorDriverContainer(const FSH * motorShieldName,
 void MotorDriverContainer::loop() {
   if (rmtChannel[0]) rmtChannel[0]->loop();
   if (rmtChannel[1]) rmtChannel[1]->loop();
+  for(const auto& d: mD)
+    d->checkPowerOverload(false); ///XXX false needs fix
 }
 
 std::vector<MotorDriver*> MotorDriverContainer::getDriverType(driverType t) {
@@ -67,4 +69,17 @@ std::vector<MotorDriver*> MotorDriverContainer::getDriverType(driverType t) {
       v.push_back(d);
   }
   return v;
+}
+
+// Turns on/off all drivers of given type.
+void MotorDriverContainer::setPowerMode(POWERMODE mode, driverType t) {
+  for(const auto& d: mD){
+    if (d->type() & t) {
+      d->setPowerMode(mode);
+      if ( (t & RMT_PROG) && rmtChannel[0])
+	rmtChannel[0]->resetProgPackCounter();
+      if ( (t & TIMER_PROG) && dccWaveform[0])
+	dccWaveform[0]->resetProgPackCounter();
+    }
+  }
 }

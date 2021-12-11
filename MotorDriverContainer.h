@@ -66,6 +66,7 @@ public:
   };
   void loop();
   std::vector<MotorDriver*>  getDriverType(driverType t);
+  void setPowerMode(POWERMODE mode, driverType t);
   RMTChannel *rmtChannel[2];
   DCCWaveform *dccWaveform[2];
 

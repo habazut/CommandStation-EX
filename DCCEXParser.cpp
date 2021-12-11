@@ -525,12 +525,14 @@ void DCCEXParser::parse(Print *stream, byte *com, RingStream * ringStream)
         return;
 
     case 'c': // SEND METER RESPONSES <c>
+      /* XXX THIS HAS TO BE SOLVED DIFFERENTLY, probably through MotorDriverContainer
         //                               <c MeterName value C/V unit min max res warn>
         StringFormatter::send(stream, F("<c CurrentMAIN %d C Milli 0 %d 1 %d>\n"), DCCWaveform::mainTrack.getCurrentmA(), 
             DCCWaveform::mainTrack.getMaxmA(), DCCWaveform::mainTrack.getTripmA());
         StringFormatter::send(stream, F("<a %d>\n"), DCCWaveform::mainTrack.get1024Current()); //'a' message deprecated, remove once JMRI 4.22 is available
+      */
+      StringFormatter::send(stream, F("<a UNKNOWN>\n"));
         return;
-
     case 'Q': // SENSORS <Q>
         Sensor::printAll(stream);
         return;
