@@ -23,6 +23,7 @@
 #include "DCCTimer.h"
 #include "DIAG.h"
 #if defined(ARDUINO_ARCH_ESP32)
+#include "DCLoco.h"
 #include <driver/adc.h>
 #define pinToADC1Channel(X) (adc1_channel_t)(((X) > 35) ? (X)-36 : (X)-28)
 #endif
@@ -34,11 +35,15 @@ MotorDriver::MotorDriver(byte power_pin, byte signal_pin, byte signal_pin2, int8
                          byte current_pin, float sense_factor, unsigned int trip_milliamps, byte fault_pin,
 			 driverType dt) {
   dtype = dt;
-  powerPin=power_pin;
-  getFastPin(F("POWER"),powerPin,fastPowerPin);
-  pinMode(powerPin, OUTPUT);
+  if(power_pin != UNUSED_PIN) {
+    powerPin=power_pin;
+    getFastPin(F("POWER"),powerPin,fastPowerPin);
+    pinMode(powerPin, OUTPUT);
+  }
 
-  if (dtype == RMT_MAIN) {
+  if (dtype == DC_ENA) {
+    dcLoco.push_back (new DCLoco(signal_pin, signal_pin2, trip_milliamps));
+  } else if (dtype == RMT_MAIN) {
     signalPin=signal_pin;
 #if defined(ARDUINO_ARCH_ESP32)
     rmtChannel = new RMTChannel(signalPin, 0, PREAMBLE_BITS_MAIN);

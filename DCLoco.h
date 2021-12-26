@@ -1,0 +1,75 @@
+/*
+ *  © 2021, Harald Barth.
+ *  
+ *  This file is part of DCC-EX
+ *
+ *  This is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  It is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+#include <Arduino.h>
+#include <vector>
+
+class DCLoco;
+extern std::vector<DCLoco *>dcLoco;
+
+class DCLoco {
+ public:
+  DCLoco(byte pin1, byte pin2, int l);
+  ~DCLoco();
+
+  inline int getID() {
+    return locoID;
+  }
+  inline void pwmSpeed(uint8_t tSpeed) {
+    // DCC Speed with 0,1 stop and speed steps 2 to 127
+    if (tSpeed > 127)
+      tSpeed = tSpeed & 127;
+    if (tSpeed <= 1) // stop and emergency stop
+      speedDC = 0;
+    else if (tSpeed > 64)
+      speedDC = 2*tSpeed + 1;
+    else
+      speedDC = (tSpeed -1)*2;
+    // now we have speed 0 to 255
+    ledcWrite(channel, speedDC);
+  }
+  inline void pwmSpeed(uint8_t tSpeed, bool tDirection) {
+    if (directionDC == tDirection) { // no change in direction
+      pwmSpeed(tSpeed);
+      return;
+    }
+    // we have a direction change, set PWM signal to 0%
+    ledcWrite(channel, 0);
+    directionDC = tDirection;
+    if(directionDC) {
+      ledcAttachPin(signalPin, channel);
+      ledcDetachPin(signalPin2);
+      digitalWrite(signalPin2, 0);
+    } else {
+      ledcAttachPin(signalPin2, channel);
+      ledcDetachPin(signalPin);
+      digitalWrite(signalPin, 0);
+    }
+    pwmSpeed(tSpeed);
+  }
+  
+ private:
+  bool directionDC;
+  uint8_t speedDC;
+  int locoID;
+  byte channel;
+  byte signalPin;
+  byte signalPin2;
+};

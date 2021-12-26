@@ -28,6 +28,7 @@
 #include "IODevice.h"
 
 #include "MotorDriver.h"
+#include "DCLoco.h"
 
 // This module is responsible for converting API calls into
 // messages to be sent to the waveform generator.
@@ -86,6 +87,11 @@ void DCC::setJoinRelayPin(byte joinRelayPin) {
 }
 
 void DCC::setThrottle( uint16_t cab, uint8_t tSpeed, bool tDirection)  {
+  for(const auto &loco: dcLoco) {
+    if (loco->getID() == cab) {
+      loco->pwmSpeed(tSpeed, tDirection);
+    }
+  }
   byte speedCode = (tSpeed & 0x7F)  + tDirection * 128; 
   setThrottle2(cab, speedCode);
   // retain speed for loco reminders

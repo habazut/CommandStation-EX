@@ -65,7 +65,12 @@ The configuration file for DCC-EX Command Station
  new MotorDriver(16, 17, UNUSED_PIN, UNUSED_PIN, 32, 2.00, 2000, UNUSED_PIN),\
  new MotorDriver(18, 19, UNUSED_PIN, UNUSED_PIN, 33, 2.00, 2000, UNUSED_PIN)
 
-#define MOTOR_SHIELD_TYPE ESP32_MOTOR_SHIELD
+#define MARKLIN_LOCO F("MARKLIN"),				\
+    NULL ,  \
+    new MotorDriver(18        , 19, UNUSED_PIN, UNUSED_PIN, UNUSED_PIN, 2.00, 2000, UNUSED_PIN, TIMER_PROG), \
+    new MotorDriver(UNUSED_PIN, 23, 16        , UNUSED_PIN, UNUSED_PIN, 2.00, 2, UNUSED_PIN, DC_ENA)
+
+#define MOTOR_SHIELD_TYPE MARKLIN_LOCO
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
