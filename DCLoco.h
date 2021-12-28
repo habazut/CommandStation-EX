@@ -20,6 +20,8 @@
 #pragma once
 #include <Arduino.h>
 #include <vector>
+#include <array>
+#include "DIAG.h"
 
 class DCLoco;
 extern std::vector<DCLoco *>dcLoco;
@@ -46,6 +48,7 @@ class DCLoco {
     ledcWrite(channel, speedDC);
   }
   inline void pwmSpeed(uint8_t tSpeed, bool tDirection) {
+    DIAG(F("pwmSpeed %d %d"), tSpeed, tDirection);
     if (directionDC == tDirection) { // no change in direction
       pwmSpeed(tSpeed);
       return;

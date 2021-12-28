@@ -20,14 +20,14 @@
 #include "DCLoco.h"
 
 std::vector<DCLoco *>dcLoco;
-const byte NUMCHANS=16; // not quite sure HI/LO speed etc.
-DCLoco *allLocos[NUMCHANS] = { NULL };
+const byte NUMCHANS=8; // not quite sure HI/LO speed etc.
+std::array<DCLoco *, NUMCHANS>allLocos = {};
 
 DCLoco::DCLoco(byte pin1, byte pin2, int l){
   // find empty channel
   for(byte i=0; i<NUMCHANS; i++) {
     if (allLocos[i] == NULL) {
-      channel=i;
+      channel=i*2;
       allLocos[i] = this;
       break;
     }
@@ -42,6 +42,7 @@ DCLoco::DCLoco(byte pin1, byte pin2, int l){
   locoID = l;
   ledcSetup(channel, 100, 8); // channel, Mhz, bits resolution
   pwmSpeed(0,0);
+  DIAG(F("Created loco %d on channel %d"), l, channel);
 }
 DCLoco::~DCLoco() {
   for(byte i=0; i<NUMCHANS; i++) {

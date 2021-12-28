@@ -42,7 +42,9 @@ MotorDriver::MotorDriver(byte power_pin, byte signal_pin, byte signal_pin2, int8
   }
 
   if (dtype == DC_ENA) {
-    dcLoco.push_back (new DCLoco(signal_pin, signal_pin2, trip_milliamps));
+    DCLoco *l = new DCLoco(signal_pin, signal_pin2, trip_milliamps);
+    DIAG(F("MD: %d %d %d"), signal_pin, signal_pin2, trip_milliamps);
+    dcLoco.push_back (l);
   } else if (dtype == RMT_MAIN) {
     signalPin=signal_pin;
 #if defined(ARDUINO_ARCH_ESP32)

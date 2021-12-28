@@ -63,6 +63,10 @@ void DCC::begin() {
 
   //example how to use add:
   //MotorDriverContainer::mDC.add(new MotorDriver(16, 21, UNUSED_PIN, UNUSED_PIN, UNUSED_PIN, 2.00, 2000, UNUSED_PIN, RMT_MAIN));
+  MotorDriverContainer::mDC.add(new MotorDriver(UNUSED_PIN, 23, 22        , UNUSED_PIN, UNUSED_PIN, 2.00, 2, UNUSED_PIN, DC_ENA));
+  MotorDriverContainer::mDC.add(new MotorDriver(UNUSED_PIN, 16, 17        , UNUSED_PIN, UNUSED_PIN, 2.00, 1, UNUSED_PIN, DC_ENA));
+  //MotorDriverContainer::mDC.add(new MotorDriver(25, 26,UNUSED_PIN        , UNUSED_PIN, UNUSED_PIN, 2.00, 1, UNUSED_PIN, RMT_MAIN));
+
   // Load stuff from EEprom
   (void)EEPROM; // tell compiler not to warn this is unused
   EEStore::init();

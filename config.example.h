@@ -67,10 +67,11 @@ The configuration file for DCC-EX Command Station
 
 #define MARKLIN_LOCO F("MARKLIN"),				\
     NULL ,  \
-    new MotorDriver(18        , 19, UNUSED_PIN, UNUSED_PIN, UNUSED_PIN, 2.00, 2000, UNUSED_PIN, TIMER_PROG), \
-    new MotorDriver(UNUSED_PIN, 23, 16        , UNUSED_PIN, UNUSED_PIN, 2.00, 2, UNUSED_PIN, DC_ENA)
+    new MotorDriver(18        , 19, UNUSED_PIN, UNUSED_PIN, UNUSED_PIN, 2.00, 2000, UNUSED_PIN, TIMER_PROG)
 
 #define MOTOR_SHIELD_TYPE MARKLIN_LOCO
+
+#define IO_NO_HAL // need all pins for other stuff
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
