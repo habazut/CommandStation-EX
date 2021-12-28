@@ -20,14 +20,15 @@
 #include "DCLoco.h"
 
 std::vector<DCLoco *>dcLoco;
-const byte NUMCHANS=8; // not quite sure HI/LO speed etc.
+const byte NUMCHANS=4; // not quite sure HI/LO speed etc.
 std::array<DCLoco *, NUMCHANS>allLocos = {};
 
 DCLoco::DCLoco(byte pin1, byte pin2, int l){
   // find empty channel
   for(byte i=0; i<NUMCHANS; i++) {
     if (allLocos[i] == NULL) {
-      channel=i*2;
+      lightChannel=i*2;             // change here for DCDistrict
+      channel=(i+4)*2;
       allLocos[i] = this;
       break;
     }
@@ -40,8 +41,24 @@ DCLoco::DCLoco(byte pin1, byte pin2, int l){
   pinMode(signalPin2, OUTPUT);
   digitalWrite(signalPin2, 0);
   locoID = l;
-  ledcSetup(channel, 100, 8); // channel, Mhz, bits resolution
+  ledcSetup(channel, 100, 8);       // channel, Mhz, bits resolution
   pwmSpeed(0,0);
+
+  if (pin1 == 22 || pin1 == 23 ) {  // all light stuff here
+    lightPin = signalPin - 6;
+    lightPin2 = signalPin2 - 6;
+    pinMode(lightPin, OUTPUT);
+    digitalWrite(lightPin, 0);
+    pinMode(lightPin2, OUTPUT);
+    digitalWrite(lightPin2, 0);
+    ledcSetup(lightChannel, 1000, 8); // channel, Mhz, bits resolution
+    ledcWrite(lightChannel, 255);     // full intensity
+    setF0(1);
+  } else {
+    lightPin = UNUSED_PIN;
+    lightPin2 = UNUSED_PIN;
+  }
+
   DIAG(F("Created loco %d on channel %d"), l, channel);
 }
 DCLoco::~DCLoco() {

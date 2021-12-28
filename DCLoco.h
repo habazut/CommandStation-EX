@@ -23,6 +23,10 @@
 #include <array>
 #include "DIAG.h"
 
+#ifndef UNUSED_PIN
+#define UNUSED_PIN 127
+#endif
+
 class DCLoco;
 extern std::vector<DCLoco *>dcLoco;
 
@@ -56,6 +60,7 @@ class DCLoco {
     // we have a direction change, set PWM signal to 0%
     ledcWrite(channel, 0);
     directionDC = tDirection;
+    setF0dir();
     if(directionDC) {
       ledcAttachPin(signalPin, channel);
       ledcDetachPin(signalPin2);
@@ -67,12 +72,42 @@ class DCLoco {
     }
     pwmSpeed(tSpeed);
   }
-  
+  inline void setF0(bool state) {
+    if(lightPin == UNUSED_PIN)
+      return;
+    lightOn = state;
+    setF0dir();
+  }
+  inline void setF0dir() {
+    if(lightPin == UNUSED_PIN)
+      return;
+    DIAG(F("setF0dir on=%d dir=%d"), lightOn, directionDC);
+    if (lightOn) {
+      if(directionDC) {
+	ledcAttachPin(lightPin, lightChannel);
+	ledcDetachPin(lightPin2);
+	digitalWrite(lightPin2, 0);
+      } else {
+	ledcAttachPin(lightPin2, lightChannel);
+	ledcDetachPin(lightPin);
+	digitalWrite(lightPin, 0);
+      }
+    } else {
+      ledcDetachPin(lightPin);
+      digitalWrite(lightPin, 0);
+      ledcDetachPin(lightPin2);
+      digitalWrite(lightPin2, 0);
+    }
+  }
  private:
   bool directionDC;
   uint8_t speedDC;
   int locoID;
   byte channel;
+  byte lightChannel;
   byte signalPin;
   byte signalPin2;
+  bool lightOn;
+  byte lightPin;
+  byte lightPin2;
 };
