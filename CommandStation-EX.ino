@@ -51,6 +51,9 @@
 // to be issued from the USB serial console.
 DCCEXParser serialParser;
 
+extern void sleepSetup();
+extern void sleepLoop();
+
 void setup()
 {
   // The main sketch has responsibilities during setup()
@@ -63,6 +66,7 @@ void setup()
 #endif
 
   DIAG(F("License GPLv3 fsf.org (c) dcc-ex.com"));
+  sleepSetup();
 
   CONDITIONAL_LCD_START {
     // This block is still executed for DIAGS if LCD not in use 
@@ -141,6 +145,7 @@ void loop()
   // Handle/update IO devices.
   IODevice::loop();
   
+  sleepLoop();
   // Report any decrease in memory (will automatically trigger on first call)
   static int ramLowWatermark = __INT_MAX__; // replaced on first loop 
 #ifdef ESP_FAMILY
