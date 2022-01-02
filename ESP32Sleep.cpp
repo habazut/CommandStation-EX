@@ -3,6 +3,8 @@
 #define pinToADC1Channel(X) (adc1_channel_t)(((X) > 35) ? (X)-36 : (X)-28)
 #define BATTPIN 35
 #define PWRPIN 39
+#define BATTFACTOR 587.0
+#define PWRFACTOR 894.0  // ???
 #define PWRBITMASK 0x8000000000 // 2^39
 //Function that prints the touchpad by which ESP32 has been awaken from sleep
 static byte touchmap[] = {4,0,2,15,13,12,14,27,33,32};
@@ -33,7 +35,7 @@ void print_wakeup_reason(){
 #define Threshold 40
 
 RTC_DATA_ATTR int bootCount = 0;
-RTC_DATA_ATTR int sleepvoltage = 0;
+RTC_DATA_ATTR int battraw = 0;
 
 void callback(){
   //placeholder callback function
@@ -49,7 +51,8 @@ void sleepSetup(){
   print_wakeup_reason();
   //print_wakeup_touchpad();
 
-  Serial.println("Sleepvoltage was: " + String(sleepvoltage/1175.0));
+  // this runs before first loop with overwrites battraw again
+  Serial.println("Sleepvoltage was: " + String(battraw/BATTFACTOR));
 
   //Setup interrupt on GPIO13
   touchAttachInterrupt(13, callback, Threshold);
@@ -74,7 +77,6 @@ void sleepLoop() {
   static unsigned long int old;
   static byte n = 0;
   unsigned long int now = millis();
-  int battraw;
   int pwrraw;
   if (now - old < 10000) {
     return;
@@ -88,6 +90,11 @@ void sleepLoop() {
   if (n > 15)
     n = 0;
 
+  Serial.print("Battery: ");
+  Serial.print(battraw/BATTFACTOR);
+  Serial.print(" ");
+  Serial.print("Power: ");
+  Serial.println(pwrraw/PWRFACTOR);
   /*
   // report battery
   Serial.print("Battery pin value raw: ");
@@ -112,9 +119,8 @@ void sleepLoop() {
   // 4095 ~ 3V   => 4.4V pwr
   // 3660 ~ 2.7V => 4.0V pwr
   if (battraw < 1880 && pwrraw < 3660){
-    sleepvoltage = battraw;
     Serial.print("Going to sleep because Batt voltage is ");
-    Serial.print(battraw/1175.0);
+    Serial.print(battraw/BATTFACTOR);
     Serial.println("V and no charge");
     esp_deep_sleep_start();
   }
