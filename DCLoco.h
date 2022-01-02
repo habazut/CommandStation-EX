@@ -22,6 +22,7 @@
 #include <vector>
 #include <array>
 #include "DIAG.h"
+#include "defines.h"
 
 #ifndef UNUSED_PIN
 #define UNUSED_PIN 127
