@@ -1,7 +1,7 @@
 
 #define FWD_MOTOR_PIN 23
 #define REV_MOTOR_PIN 22
-#define FWD_LIGHT_PIN 17
+#define FWD_LIGHT_PIN 18
 #define REV_LIGHT_PIN 16
 
 #define MARKLIN_LOCO F("MARKLIN"),				\
