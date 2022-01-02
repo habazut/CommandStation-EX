@@ -1,5 +1,6 @@
-#include "DIAG.h"
 #include <driver/adc.h>
+#include "DIAG.h"
+#include "DCLoco.h"
 #define pinToADC1Channel(X) (adc1_channel_t)(((X) > 35) ? (X)-36 : (X)-28)
 #define BATTPIN 35
 #define PWRPIN 39
@@ -76,9 +77,10 @@ int pwrrawmem[16] = {0};
 void sleepLoop() {
   static unsigned long int old;
   static byte n = 0;
+  static bool powerwarning = false;
   unsigned long int now = millis();
   int pwrraw;
-  if (now - old < 10000) {
+  if (now - old < 1000) { // check once per second
     return;
   }
   old = now;
@@ -118,10 +120,23 @@ void sleepLoop() {
   // Power:
   // 4095 ~ 3V   => 4.4V pwr
   // 3660 ~ 2.7V => 4.0V pwr
-  if (battraw < 1880 && pwrraw < 3660){
-    Serial.print("Going to sleep because Batt voltage is ");
-    Serial.print(battraw/BATTFACTOR);
-    Serial.println("V and no charge");
-    esp_deep_sleep_start();
+  if (pwrraw < 3660){
+    if (powerwarning == false) {
+      powerwarning = true;
+      if (! dcLoco.empty())
+	dcLoco[0]->warningLight(true);
+    }
+    if (battraw < 1880){
+      Serial.print("Going to sleep because Batt voltage is ");
+      Serial.print(battraw/BATTFACTOR);
+      Serial.println("V and no charge");
+      esp_deep_sleep_start();
+    }
+  } else {
+    if (powerwarning == true) {
+      powerwarning = false;
+      if (! dcLoco.empty())
+	dcLoco[0]->warningLight(false);
+    }
   }
 }

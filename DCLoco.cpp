@@ -27,8 +27,8 @@ DCLoco::DCLoco(byte pin1, byte pin2, int l){
   // find empty channel
   for(byte i=0; i<NUMCHANS; i++) {
     if (allLocos[i] == NULL) {
-      lightChannel=i*2;             // change here for DCDistrict
-      channel=(i+4)*2;
+      channel=i*2;             // change here for DCDistrict
+      lightChannel=(i+4)*2;
       allLocos[i] = this;
       break;
     }
@@ -41,19 +41,20 @@ DCLoco::DCLoco(byte pin1, byte pin2, int l){
   pinMode(signalPin2, OUTPUT);
   digitalWrite(signalPin2, 0);
   locoID = l;
-  ledcSetup(channel, 100, 8);       // channel, Mhz, bits resolution
+  ledcSetup(channel, 100, 8);       // channel, Hz, bits resolution
   pwmSpeed(0,0);
 
   if (pin1 == 22 || pin1 == 23 ) {  // all light stuff here
-    lightPin = signalPin - 6;
-    lightPin2 = signalPin2 - 6;
+    lightPin = FWD_LIGHT_PIN;
+    lightPin2 = REV_LIGHT_PIN;
     pinMode(lightPin, OUTPUT);
     digitalWrite(lightPin, 0);
     pinMode(lightPin2, OUTPUT);
     digitalWrite(lightPin2, 0);
-    ledcSetup(lightChannel, 1000, 8); // channel, Mhz, bits resolution
+    ledcSetup(lightChannel, 1000, 8); // channel, Hz, bits resolution
     ledcWrite(lightChannel, 255);     // full intensity
-    setF0(1);
+    f0On = true;
+    setF0dir();
   } else {
     lightPin = UNUSED_PIN;
     lightPin2 = UNUSED_PIN;
