@@ -1,4 +1,5 @@
 
+#define DC_LOCO_ID 2
 #define FWD_MOTOR_PIN 23
 #define REV_MOTOR_PIN 22
 #define FWD_LIGHT_PIN 18

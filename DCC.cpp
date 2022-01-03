@@ -63,7 +63,7 @@ void DCC::begin() {
 
   //example how to use add:
   //MotorDriverContainer::mDC.add(new MotorDriver(16, 21, UNUSED_PIN, UNUSED_PIN, UNUSED_PIN, 2.00, 2000, UNUSED_PIN, RMT_MAIN));
-  MotorDriverContainer::mDC.add(new MotorDriver(UNUSED_PIN, FWD_MOTOR_PIN, REV_MOTOR_PIN, UNUSED_PIN, UNUSED_PIN, 2.00, 2, UNUSED_PIN, DC_ENA));
+  MotorDriverContainer::mDC.add(new MotorDriver(UNUSED_PIN, FWD_MOTOR_PIN, REV_MOTOR_PIN, UNUSED_PIN, UNUSED_PIN, 2.00, DC_LOCO_ID, UNUSED_PIN, DC_ENA));
   //MotorDriverContainer::mDC.add(new MotorDriver(UNUSED_PIN, 16, 17        , UNUSED_PIN, UNUSED_PIN, 2.00, 1, UNUSED_PIN, DC_ENA));
   //MotorDriverContainer::mDC.add(new MotorDriver(25, 26,UNUSED_PIN        , UNUSED_PIN, UNUSED_PIN, 2.00, 1, UNUSED_PIN, RMT_MAIN));
 
@@ -174,7 +174,7 @@ void DCC::setFn( int cab, int16_t functionNumber, bool on) {
   if (cab<=0 ) return;
   
   // special for ESP32 in loco with sleep
-  if (functionNumber == 15 && on == true)
+  if (cab == DC_LOCO_ID && functionNumber == 15 && on == true)
     esp_deep_sleep_start();
 
   if (functionNumber>28) { 
@@ -222,7 +222,7 @@ int DCC::changeFn( int cab, int16_t functionNumber, bool pressed) {
   if (reg<0) return funcstate;  
 
   // special for ESP32 in loco with sleep
-  if (functionNumber == 15 && pressed == true)
+  if (cab == DC_LOCO_ID && functionNumber == 15 && pressed == true)
     esp_deep_sleep_start();
 
   // Take care of functions:
