@@ -82,6 +82,16 @@ class DCLoco {
       ledcWrite(lightChannel, 255);     // full intensity
     }
   }
+  inline void setFx(byte fnum, bool state) {
+    switch (fnum) {
+    case 0:
+      setF0(state);
+      break;
+    case 15:
+      esp_deep_sleep_start();
+      break;
+    }
+  }
   inline void setF0(bool state) {
     if(lightPin == UNUSED_PIN)
       return;

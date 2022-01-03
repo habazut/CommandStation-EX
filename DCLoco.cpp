@@ -25,6 +25,8 @@ std::array<DCLoco *, NUMCHANS>allLocos = {};
 
 DCLoco::DCLoco(byte pin1, byte pin2, int l){
   // find empty channel
+  // does not handle channel overflow but we only
+  // have 1 loco so far
   for(byte i=0; i<NUMCHANS; i++) {
     if (allLocos[i] == NULL) {
       channel=i*2;             // change here for DCDistrict
@@ -33,18 +35,10 @@ DCLoco::DCLoco(byte pin1, byte pin2, int l){
       break;
     }
   }
-  // does not handle channel overflow
-  signalPin = pin1;
-  signalPin2 = pin2;
-  pinMode(signalPin, OUTPUT);
-  digitalWrite(signalPin, 0);
-  pinMode(signalPin2, OUTPUT);
-  digitalWrite(signalPin2, 0);
-  locoID = l;
-  ledcSetup(channel, 100, 8);       // channel, Hz, bits resolution
-  pwmSpeed(0,0);
 
-  if (pin1 == 22 || pin1 == 23 ) {  // all light stuff here
+  // set up light pins before first
+  // call to pwmSpeed()
+  if (pin1 == 22 || pin1 == 23 ) {
     lightPin = FWD_LIGHT_PIN;
     lightPin2 = REV_LIGHT_PIN;
     pinMode(lightPin, OUTPUT);
@@ -54,11 +48,23 @@ DCLoco::DCLoco(byte pin1, byte pin2, int l){
     ledcSetup(lightChannel, 1000, 8); // channel, Hz, bits resolution
     ledcWrite(lightChannel, 255);     // full intensity
     f0On = true;
-    setF0dir();
+    //setF0dir(); // called by pwmSpeed
   } else {
+    f0On = false;
     lightPin = UNUSED_PIN;
     lightPin2 = UNUSED_PIN;
   }
+
+  // set up motor pins
+  signalPin = pin1;
+  signalPin2 = pin2;
+  pinMode(signalPin, OUTPUT);
+  digitalWrite(signalPin, 0);
+  pinMode(signalPin2, OUTPUT);
+  digitalWrite(signalPin2, 0);
+  locoID = l;
+  ledcSetup(channel, 100, 8);       // channel, Hz, bits resolution
+  pwmSpeed(0,0);
 
   DIAG(F("Created loco %d on channel %d"), l, channel);
 }

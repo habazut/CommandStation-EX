@@ -173,9 +173,11 @@ bool DCC::getThrottleDirection(int cab) {
 void DCC::setFn( int cab, int16_t functionNumber, bool on) {
   if (cab<=0 ) return;
   
-  // special for ESP32 in loco with sleep
-  if (cab == DC_LOCO_ID && functionNumber == 15 && on == true)
-    esp_deep_sleep_start();
+  for(const auto &loco: dcLoco) {
+    if (loco->getID() == cab) {
+      loco->setFx(functionNumber, on);
+    }
+  }
 
   if (functionNumber>28) { 
     //non reminding advanced binary bit set 
@@ -221,10 +223,6 @@ int DCC::changeFn( int cab, int16_t functionNumber, bool pressed) {
   int reg = lookupSpeedTable(cab);
   if (reg<0) return funcstate;  
 
-  // special for ESP32 in loco with sleep
-  if (cab == DC_LOCO_ID && functionNumber == 15 && pressed == true)
-    esp_deep_sleep_start();
-
   // Take care of functions:
   // Imitate how many command stations do it: Button press is
   // toggle but for F2 where it is momentary
@@ -244,6 +242,13 @@ int DCC::changeFn( int cab, int16_t functionNumber, bool pressed) {
         speedTable[reg].functions ^= funcmask;
       }
       funcstate = (speedTable[reg].functions & funcmask)? 1 : 0;
+  }
+
+  // DC loco intercept
+  for(const auto &loco: dcLoco) {
+    if (loco->getID() == cab) {
+      loco->setFx(functionNumber, funcstate);
+    }
   }
   updateGroupflags(speedTable[reg].groupFlags, functionNumber);
   return funcstate;
