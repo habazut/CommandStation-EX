@@ -78,6 +78,7 @@ void sleepLoop() {
   static unsigned long int old;
   static byte n = 0;
   static bool powerwarning = false;
+  static uint8_t modcounter = 0;
   unsigned long int now = millis();
   int pwrraw;
   if (now - old < 1000) { // check once per second
@@ -92,11 +93,13 @@ void sleepLoop() {
   if (n > 15)
     n = 0;
 
-  Serial.print("Battery: ");
-  Serial.print(battraw/BATTFACTOR);
-  Serial.print(" ");
-  Serial.print("Power: ");
-  Serial.println(pwrraw/PWRFACTOR);
+  if (modcounter++ % 16 == 0) { //do not print every second
+    Serial.print("Battery: ");
+    Serial.print(battraw/BATTFACTOR);
+    Serial.print(" ");
+    Serial.print("Power: ");
+    Serial.println(pwrraw/PWRFACTOR);
+  }
   /*
   // report battery
   Serial.print("Battery pin value raw: ");
@@ -120,7 +123,8 @@ void sleepLoop() {
   // Power:
   // 4095 ~ 3V   => 4.4V pwr
   // 3660 ~ 2.7V => 4.0V pwr
-  if (pwrraw < 3660){
+  // 3000        => 3.35V pwr
+  if (pwrraw < 3000){
     if (powerwarning == false) {
       powerwarning = true;
       if (! dcLoco.empty())
