@@ -77,9 +77,16 @@ class DCLoco {
     if (on) {
       ledcSetup(lightChannel, 1, 8);
       ledcWrite(lightChannel, 25); // 10% PWM
+      if (lightPin != UNUSED_PIN)
+	ledcAttachPin(lightPin, lightChannel);
+      if (lightPin2 != UNUSED_PIN)
+	ledcAttachPin(lightPin2, lightChannel);
+      warninglight = true;
     } else {
       ledcSetup(lightChannel, 1000, 8); // channel, Hz, bits resolution
       ledcWrite(lightChannel, 255);     // full intensity
+      warninglight = false;
+      setF0dir();
     }
   }
   inline void setFx(byte fnum, bool state) {
@@ -100,28 +107,39 @@ class DCLoco {
     f0On = state;
     setF0dir();
   }
+
+private:
   inline void setF0dir() {
-    if(lightPin == UNUSED_PIN)
+    if (warninglight)
       return;
     DIAG(F("setF0dir on=%d dir=%d"), f0On, directionDC);
     if (f0On) {
       if(directionDC) {
-	ledcAttachPin(lightPin, lightChannel);
-	ledcDetachPin(lightPin2);
-	digitalWrite(lightPin2, 0);
+	if (lightPin != UNUSED_PIN)
+	  ledcAttachPin(lightPin, lightChannel);
+	if (lightPin2 != UNUSED_PIN) {
+	  ledcDetachPin(lightPin2);
+	  digitalWrite(lightPin2, 0);
+	}
       } else {
-	ledcAttachPin(lightPin2, lightChannel);
+	if (lightPin2 != UNUSED_PIN)
+	  ledcAttachPin(lightPin2, lightChannel);
+	if (lightPin != UNUSED_PIN) {
+	  ledcDetachPin(lightPin);
+	  digitalWrite(lightPin, 0);
+	}
+      }
+    } else {
+      if (lightPin != UNUSED_PIN) {
 	ledcDetachPin(lightPin);
 	digitalWrite(lightPin, 0);
       }
-    } else {
-      ledcDetachPin(lightPin);
-      digitalWrite(lightPin, 0);
-      ledcDetachPin(lightPin2);
-      digitalWrite(lightPin2, 0);
+      if (lightPin2 != UNUSED_PIN) {
+	ledcDetachPin(lightPin2);
+	digitalWrite(lightPin2, 0);
+      }
     }
   }
- private:
   bool directionDC;
   uint8_t speedDC;
   int locoID;
@@ -132,4 +150,5 @@ class DCLoco {
   bool f0On;
   byte lightPin;
   byte lightPin2;
+  bool warninglight = 0;
 };
