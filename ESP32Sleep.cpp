@@ -79,6 +79,7 @@ void sleepLoop() {
   static byte n = 0;
   static bool powerwarning = false;
   static uint8_t modcounter = 0;
+  static bool pwrOK = true;
   unsigned long int now = millis();
   int pwrraw;
   if (now - old < 1000) { // check once per second
@@ -125,18 +126,23 @@ void sleepLoop() {
   // 3660 ~ 2.7V => 4.0V pwr
   // 3000        => 3.35V pwr
   if (pwrraw < 3000){
-    if (powerwarning == false) {
-      powerwarning = true;
-      if (! dcLoco.empty())
-	dcLoco[0]->warningLight(true);
+    if (!pwrOK) {
+      if (powerwarning == false) {
+	powerwarning = true;
+	if (! dcLoco.empty())
+	  dcLoco[0]->warningLight(true);
+      }
+      if (battraw < 1880){
+	Serial.print("Going to sleep because Batt voltage is ");
+	Serial.print(battraw/BATTFACTOR);
+	Serial.println("V and no charge");
+	esp_deep_sleep_start();
+      }
     }
-    if (battraw < 1880){
-      Serial.print("Going to sleep because Batt voltage is ");
-      Serial.print(battraw/BATTFACTOR);
-      Serial.println("V and no charge");
-      esp_deep_sleep_start();
-    }
+    pwrOK = false; // we trigger first after 2nd round
   } else {
+    //pwrraw level test successful
+    pwrOK=true;
     if (powerwarning == true) {
       powerwarning = false;
       if (! dcLoco.empty())
