@@ -220,6 +220,21 @@ void DCC::setFn( int cab, int16_t functionNumber, bool on) {
 int DCC::changeFn( int cab, int16_t functionNumber, bool pressed) {
   int funcstate = -1;
   if (cab<=0 || functionNumber>28) return funcstate;
+
+  // DC loco intercept
+  for(const auto &loco: dcLoco) {
+    if (loco->getID() == cab) {
+      if (pressed) {
+	funcstate = loco->getFx(functionNumber);
+	if ( funcstate != -1) {
+	  funcstate = !funcstate;
+	  setFn(cab, functionNumber, funcstate); // fixes shadowing speedtable
+	}
+	return funcstate;                      // so for DC we're done
+      }
+    }
+  }
+
   int reg = lookupSpeedTable(cab);
   if (reg<0) return funcstate;  
 
@@ -242,13 +257,6 @@ int DCC::changeFn( int cab, int16_t functionNumber, bool pressed) {
         speedTable[reg].functions ^= funcmask;
       }
       funcstate = (speedTable[reg].functions & funcmask)? 1 : 0;
-  }
-
-  // DC loco intercept
-  for(const auto &loco: dcLoco) {
-    if (loco->getID() == cab) {
-      loco->setFx(functionNumber, funcstate);
-    }
   }
   updateGroupflags(speedTable[reg].groupFlags, functionNumber);
   return funcstate;

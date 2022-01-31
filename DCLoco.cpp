@@ -63,8 +63,9 @@ DCLoco::DCLoco(byte pin1, byte pin2, int l){
   pinMode(signalPin2, OUTPUT);
   digitalWrite(signalPin2, 0);
   locoID = l;
-  ledcSetup(channel, 100, 8);       // channel, Hz, bits resolution
-  pwmSpeed(0,0);
+  ledcSetup(channel, 100, 8);   // channel, Hz, bits resolution
+  directionDC=0;                // rew, so that pwmSpeed does change..
+  pwmSpeed(0,!directionDC);     // ..it to forward
 
   DIAG(F("Created loco %d on channel %d"), l, channel);
 }

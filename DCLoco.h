@@ -99,6 +99,16 @@ class DCLoco {
       break;
     }
   }
+  inline byte getFx(byte fnum) {
+    switch (fnum) {
+    case 0:
+      return getF0();
+      break;
+    }
+    return -1;
+  }
+
+private:
   inline void setF0(bool state) {
     if(lightPin == UNUSED_PIN)
       return;
@@ -107,8 +117,7 @@ class DCLoco {
     f0On = state;
     setF0dir();
   }
-
-private:
+  inline bool getF0() {return f0On;};
   inline void setF0dir() {
     if (warninglight)
       return;
