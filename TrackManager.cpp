@@ -131,7 +131,7 @@ bool TrackManager::setTrackMode(byte trackToSet, TRACK_MODE mode, int16_t dcAddr
     if (mode==TRACK_MODE_PROG) {
         // only allow 1 track to be prog
         FOR_EACH_TRACK(t)
-            if (trackMode[t]==TRACK_MODE_PROG) {
+            if (trackMode[t]==TRACK_MODE_PROG && t != trackToSet) {
                 track[t]->setPower(POWERMODE::OFF);
                 trackMode[t]=TRACK_MODE_OFF;
             }
