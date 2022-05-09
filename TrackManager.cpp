@@ -85,9 +85,14 @@ void TrackManager::addTrack(byte t, MotorDriver* driver) {
          track[t]->setPower(POWERMODE::OFF);
      } 
 }    
-
+extern byte fakePORTA;
+extern byte fakePORTB;
 void TrackManager::setDCCSignal( bool on) {
-    APPLY_BY_MODE(TRACK_MODE_MAIN,setSignal(on));
+  fakePORTA=PORTA;
+  fakePORTB=PORTB;
+  APPLY_BY_MODE(TRACK_MODE_MAIN,setSignal(on));
+  PORTA=fakePORTA;
+  PORTB=fakePORTB;
 }
 
 void TrackManager::setCutout( bool on) {
@@ -96,7 +101,11 @@ void TrackManager::setCutout( bool on) {
 }
 
 void TrackManager::setPROGSignal( bool on) {
-    APPLY_BY_MODE(TRACK_MODE_PROG,setSignal(on));
+  fakePORTA=PORTA;
+  fakePORTB=PORTB;
+  APPLY_BY_MODE(TRACK_MODE_PROG,setSignal(on));
+  PORTA=fakePORTA;
+  PORTB=fakePORTB;
 }
 
 void TrackManager::setDCSignal(int16_t cab, byte speedbyte) {
@@ -153,9 +162,10 @@ bool TrackManager::setTrackMode(byte trackToSet, TRACK_MODE mode, int16_t dcAddr
         if (trackMode[t]==TRACK_MODE_MAIN ||trackMode[t]==TRACK_MODE_PROG)
             canDo &= track[t]->isPWMCapable();
     DIAG(F("HAMode=%d"),canDo);
-    if (!canDo) {
-      DCCTimer::clearPWM();
-    }
+//    if (!canDo) {
+//    DIAG(F("ClearPWM"));
+//      DCCTimer::clearPWM();
+//    }
     MotorDriver::usePWM=canDo;
 
     

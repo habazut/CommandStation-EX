@@ -85,7 +85,8 @@ void DCCTimer::begin(INTERRUPT_CALLBACK callback) {
 
 void DCCTimer::clearPWM() {
   TCCR1A = 0;
-//  TCCR1B = 0;
+  TCCR1B = 0;
+  TIMSK1 = 0;
   return;
   TCCR1A &= ~(_BV(COM1A1));
   TCCR1A &= ~(_BV(COM1B1));

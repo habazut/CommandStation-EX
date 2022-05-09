@@ -25,14 +25,12 @@
 #include "DCCTimer.h"
 #include "DIAG.h"
 
-#define setHIGH(fastpin)  *fastpin.inout |= fastpin.maskHIGH
-#define setLOW(fastpin)   *fastpin.inout &= fastpin.maskLOW
-#define isHIGH(fastpin)   (*fastpin.inout & fastpin.maskHIGH)
-#define isLOW(fastpin)    (!isHIGH(fastpin))
-
 bool MotorDriver::usePWM=false;
 bool MotorDriver::commonFaultPin=false;
-       
+
+volatile byte fakePORTA;
+volatile byte fakePORTB;
+
 MotorDriver::MotorDriver(VPIN power_pin, byte signal_pin, byte signal_pin2, int8_t brake_pin,
                          byte current_pin, float sense_factor, unsigned int trip_milliamps, byte fault_pin) {
   powerPin=power_pin;
@@ -41,7 +39,15 @@ MotorDriver::MotorDriver(VPIN power_pin, byte signal_pin, byte signal_pin2, int8
   signalPin=signal_pin;
   getFastPin(F("SIG"),signalPin,fastSignalPin);
   pinMode(signalPin, OUTPUT);
-  
+
+  if (fastSignalPin.inout == &PORTA) {
+    DIAG(F("Found PORTA pin %d"),signalPin);
+    fastSignalPin.inout = &fakePORTA;
+  }
+  if (fastSignalPin.inout == &PORTB) {
+    DIAG(F("Found PORTB pin %d"),signalPin);
+    fastSignalPin.inout = &fakePORTB;
+  }
   signalPin2=signal_pin2;
   if (signalPin2!=UNUSED_PIN) {
     dualSignal=true;
@@ -119,7 +125,8 @@ void MotorDriver::setBrake(bool on) {
   else setLOW(fastBrakePin);
 }
 
-void MotorDriver::setSignal( bool high) {
+/*
+__attribute__((always_inline)) inline void MotorDriver::setSignal( bool high) {
    if (usePWM) {
     DCCTimer::setPWM(signalPin,high);
    }
@@ -134,6 +141,7 @@ void MotorDriver::setSignal( bool high) {
      }
    }
 }
+*/
 
 
 bool MotorDriver::canMeasureCurrent() {
