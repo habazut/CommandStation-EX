@@ -15,7 +15,12 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
- */
+ *
+ *  Modifications
+ *  22-04-01 Metkom, modidx:1, changed from HAL_... to DCC_... (was not unique)
+ *  22-04-01 Metkom, modidx:2, added 0xFF to function's parameters
+ *
+ ***********************************************************************/
 
 #include "DCC.h"
 #include "IODevice.h"
@@ -39,7 +44,7 @@ DCCAccessoryDecoder::DCCAccessoryDecoder(VPIN vpin, int nPins, int DCCAddress, i
 }
 
 void DCCAccessoryDecoder::_begin() {
-#if defined(DIAG_IO)
+#ifdef DIAG_IO
   _display();
 #endif
 }
@@ -47,17 +52,19 @@ void DCCAccessoryDecoder::_begin() {
 // Device-specific write function.  State 1=closed, 0=thrown.  Adjust for RCN-213 compliance
 void DCCAccessoryDecoder::_write(VPIN id, int state) {
   int packedAddress = _packedAddress + id - _firstVpin;
-#if defined(HAL_ACCESSORY_COMMAND_REVERSE)
+// modidx:1
+#ifdef DCC_ACCESSORY_PORT_REVERSE
   state = !state;
-#ifdef DIAG_IO
-  DIAG(F("DCC Write Linear Address:%d State:%d (inverted)"), packedAddress, state);
+  #ifdef DIAG_IO
+    DIAG(F("DCC Write Linear Address:%d State:%d (inverted)"), packedAddress, state);
+  #endif
+  #else
+  #ifdef DIAG_IO
+    DIAG(F("DCC Write Linear Address:%d State:%d"), packedAddress, state);
+  #endif
 #endif
-#else
-#ifdef DIAG_IO
-  DIAG(F("DCC Write Linear Address:%d State:%d"), packedAddress, state);
-#endif
-#endif
-  DCC::setAccessory(ADDRESS(packedAddress), SUBADDRESS(packedAddress), state);
+  // modidx:2, added 0xFF to satisfy number of parameters with 'a' command with 4 parameters
+  DCC::setAccessory(ADDRESS(packedAddress), SUBADDRESS(packedAddress), state, 0xFF);
 }
 
 void DCCAccessoryDecoder::_display() {

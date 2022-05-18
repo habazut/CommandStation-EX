@@ -18,7 +18,12 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
- */
+ *
+ *  Modifications
+ *  22-04-01 Metkom, modidx:1, changed HAL_... to DCC_... (was not unique)
+ *           modidx:2, output state can be reversed in 4-byte 'a' command
+ *
+ **********************************************************************/
 
 /**********************************************************************
 
@@ -65,7 +70,7 @@ The configuration file for DCC-EX Command Station
 // If DONT_TOUCH_WIFI_CONF is set, all WIFI config will be done with
 // the <+> commands and this sketch will not change anything over
 // AT commands and the other WIFI_* defines below do not have any effect.
-//#define DONT_TOUCH_WIFI_CONF
+// #define DONT_TOUCH_WIFI_CONF
 //
 // WIFI_SSID is the network name IF you want to use your existing home network.
 // Do NOT change this if you want to use the WiFi in Access Point (AP) mode. 
@@ -102,15 +107,13 @@ The configuration file for DCC-EX Command Station
 // ENABLE_ETHERNET: Set to true if you have an Arduino Ethernet card (wired). This
 // is not for Wifi. You will then need the Arduino Ethernet library as well
 //
-//#define ENABLE_ETHERNET true
-
+// #define ENABLE_ETHERNET true
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
 // DEFINE STATIC IP ADDRESS *OR* COMMENT OUT TO USE DHCP
 //
-//#define IP_ADDRESS { 192, 168, 1, 200 }
-
+// #define IP_ADDRESS { 192, 168, 1, 200 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
@@ -123,9 +126,9 @@ The configuration file for DCC-EX Command Station
 // define LCD_DRIVER for I2C address 0x27, 16 cols, 2 rows
 // #define LCD_DRIVER  0x27,16,2
 
-//OR define OLED_DRIVER width,height in pixels (address auto detected)
+// OR define OLED_DRIVER width,height in pixels (address auto detected)
 // 128x32 or 128x64 I2C SSD1306-based devices are supported.
-// Also 132x64 I2C SH1106 devices
+// Use 132,64 for a SH1106-based I2C device with a 128x64 display.
 // #define OLED_DRIVER 128,32
 
 // Define scroll mode as 0, 1 or 2
@@ -138,7 +141,6 @@ The configuration file for DCC-EX Command Station
 // data in the EEPROM. You might want to do that if you are in a Arduino UNO
 // and want to use the EX-RAIL automation. Otherwise you do not have enough RAM
 // to do that. Of course, then none of the EEPROM related commands works.
-//
 // #define DISABLE_EEPROM
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -146,9 +148,9 @@ The configuration file for DCC-EX Command Station
 // is 127 and the first long address is 128. There are manufacturers which have
 // another view. Lenz CS for example have considered addresses long from 100. If
 // you want to change to that mode, do 
-//#define HIGHEST_SHORT_ADDR 99
+// #define HIGHEST_SHORT_ADDR 99
 // If you want to run all your locos addressed long format, you could even do a 
-//#define HIGHEST_SHORT_ADDR 0
+// #define HIGHEST_SHORT_ADDR 0
 // We do not support to use the same address, for example 100(long) and 100(short)
 // at the same time, there must be a border.
 
@@ -160,27 +162,35 @@ The configuration file for DCC-EX Command Station
 // and one with a 0 is thrown/diverging.  In DCC++ Classic, and in previous
 // versions of DCC++EX, a turnout throw command was implemented in the packet as 
 // '1' and a close command as '0'. The #define below makes the states
-// match with the norm.  But we don't want to cause havoc on existent layouts,
-// so we define this only for new installations. If you don't want this,
-// don't add it to your config.h.
-//#define DCC_TURNOUTS_RCN_213
-
-// By default, the driver which defines a DCC accessory decoder
-// does send out the same state change on the DCC packet as it
-// receives. This means a VPIN state=1 sends D=1 (close turnout
-// or signal green) in the DCC packet. This can be reversed if
-// necessary.
-//#define HAL_ACCESSORY_COMMAND_REVERSE
+// match with the norm.  But we don't want to cause havoc on existing layouts,
+// so we recommend this only for new installations.
+// If you don't want this, don't add it to your config.h.
+// #define DCC_TURNOUTS_RCN_213
 
 // If you have issues with that the direction of the accessory commands is
 // reversed (for example when converting from another CS to DCC-EX) then
-// you can use this to revese the sense of all accessory commmands sent
+// you can use this to reverse the sense of all accessory commmands sent
 // over DCC++. This #define likewise inverts the behaviour of the <a> command
 // for triggering DCC Accessory Decoders, so that <a addr subaddr 0> generates a
 // DCC packet with D=1 (close turnout) and <a addr subaddr 1> generates D=0 
 // (throw turnout).
-//#define DCC_ACCESSORY_RCN_213
-//
+// #define DCC_ACCESSORY_RCN_213
+
+// modidx:1, modified test, changed HAL_ to DCC_                                 
+// By default, the driver which defines a DCC accessory decoder
+// does send out the same port change on the DCC packet as it
+// receives. This means a VPIN state=1 sends D=1 (close turnout
+// or signal green) in the DCC packet, 0 = thrown / signal red.
+// This can be reversed if necessary.
+// #define DCC_ACCESSORY_PORT_REVERSE
+
+// modidx:2, (new)
+// By default, the driver which defines a DCC accessory decoder
+// does send out the same output state change on the DCC packet
+// as it receives. This means 0 = output OFF and 1 = output ON 
+// This can be reversed if necessary.
+// #define DCC_ACCESSORY_OSTATE_REVERSE
+
 // HANDLING MULTIPLE SERIAL THROTTLES
 // The command station always operates with the default Serial port.
 // Diagnostics are only emitted on the default serial port and not broadcast.

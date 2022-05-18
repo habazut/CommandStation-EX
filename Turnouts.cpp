@@ -21,8 +21,11 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
- */
-
+ *
+ *  Modifications
+ *  22-04-01 Metkom, modidx:1, added 0xFF to function's parameters
+ *
+ ***********************************************************************/
 
 #include "defines.h"  // includes config.h
 #ifndef DISABLE_EEPROM
@@ -122,13 +125,12 @@
     return true;
   }
 
-
   // Static setClosed function is invoked from close(), throw() etc. to perform the 
   //  common parts of the turnout operation.  Code which is specific to a turnout
   //  type should be placed in the virtual function setClosedInternal(bool) which is
   //  called from here.
   /* static */ bool Turnout::setClosed(uint16_t id, bool closeFlag) { 
-  #if defined(DIAG_IO)
+  #ifdef DIAG_IO
     if (closeFlag) 
       DIAG(F("Turnout::close(%d)"), id);
     else
@@ -395,7 +397,8 @@
     // DCC++ Classic behaviour is that Throw writes a 1 in the packet,
     // and Close writes a 0.  
     // RCN-213 specifies that Throw is 0 and Close is 1.
-    DCC::setAccessory(_dccTurnoutData.address, _dccTurnoutData.subAddress, close ^ !rcn213Compliant);
+    // modidx:2, added 0xFF to satisfy number of parameters with 'a' command with 4 parameters
+    DCC::setAccessory(_dccTurnoutData.address, _dccTurnoutData.subAddress, close ^ !rcn213Compliant, 0xFF);
     _turnoutData.closed = close;
     return true;
   }

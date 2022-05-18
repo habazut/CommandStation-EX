@@ -44,7 +44,16 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
- */
+ *
+ *  Modifications
+ *  2022-04-08 Michael Metzler
+ *  Added support for 4-byte accessory decoder commands in order to turn
+ *  on and off each decoder output individually.
+ *  Added support for assigning an individual mac address (if desired).
+ *  Added a workaround for timing problems on receiving ethernet commands.
+ *  Version updated to 4.0.9
+ *  
+ **************************************************************************/
 
 #include "DCCEX.h"
 #ifdef WIFI_WARNING

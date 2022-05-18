@@ -23,6 +23,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 #include "StringFormatter.h"
 #include "DCCEXParser.h"
 #include "DCC.h"
@@ -107,7 +108,7 @@ int16_t DCCEXParser::splitValues(int16_t result[MAX_COMMAND_PARAMS], const byte 
     bool signNegative = false;
 
     // clear all parameters in case not enough found
-    for (int16_t i = 0; i < MAX_COMMAND_PARAMS; i++)
+    for (int16_t i = 0; i < MAX_COMMAND_PARAMS; i++) 
         result[i] = 0;
 
     while (parameterCount < MAX_COMMAND_PARAMS)
@@ -188,20 +189,17 @@ void DCCEXParser::parse(const FSH * cmd) {
 }
 
 // See documentation on DCC class for info on this section
-
-void DCCEXParser::parse(Print *stream, byte *com, RingStream * ringStream)
+void DCCEXParser::parse(Print *stream, byte *rxCmd, RingStream *ringStream)
 {
 #ifndef DISABLE_EEPROM
     (void)EEPROM; // tell compiler not to warn this is unused
 #endif
-    if (Diag::CMD)
-        DIAG(F("PARSING:%s"), com);
+    if (Diag::CMD) DIAG(F("PARSING: %s"), rxCmd);
     int16_t p[MAX_COMMAND_PARAMS];
-    while (com[0] == '<' || com[0] == ' ')
-        com++; // strip off any number of < or spaces
-    byte opcode = com[0];
-    byte params = splitValues(p, com, opcode=='M' || opcode=='P');
-    
+    while (rxCmd[0] == '<' || rxCmd[0] == ' ') rxCmd++; // strip off any number of < or spaces
+    byte opcode = rxCmd[0];
+    // get number of parameters
+    byte params = splitValues(p, rxCmd, opcode=='M' || opcode=='P');
     if (filterCallback)
         filterCallback(stream, opcode, params, p);
     if (filterRMFTCallback && opcode!='\0')
@@ -259,33 +257,48 @@ void DCCEXParser::parse(Print *stream, byte *com, RingStream * ringStream)
             return;
         break;
 
-    case 'a': // ACCESSORY <a ADDRESS SUBADDRESS ACTIVATE> or <a LINEARADDRESS ACTIVATE>
+// das kommt von oben: void DCCEXParser::parse(Print *stream, byte *rxCmd, RingStream * ringStream)
+
+    case 'a': // ACCESSORY <a ADDRESS SUBADDRESS ACTIVATE> or <a ADDRESS PORT GATE STATE> or <a LINEARADDRESS ACTIVATE>
         { 
           int address;
           byte subaddress;
-          byte activep;
+          byte activeg;
+          byte actives;
           if (params==2) { // <a LINEARADDRESS ACTIVATE>
               address=(p[0] - 1) / 4 + 1;
               subaddress=(p[0] - 1)  % 4;
-              activep=1;        
+              activeg=1;
+              actives=1;
           }
           else if (params==3) { // <a ADDRESS SUBADDRESS ACTIVATE>
               address=p[0];
               subaddress=p[1];
-              activep=2;        
+              activeg=2;        
+              actives=2;
+          }
+          else if (params==4) { // <a ADDRESS PORT GATE STATE>
+              address=p[0];
+              subaddress=p[1];
+              activeg=2;
+              actives=3;
           }
           else break; // invalid no of parameters
-          
           if (
              ((address & 0x01FF) != address)      // invalid address (limit 9 bits ) 
-          || ((subaddress & 0x03) != subaddress)  // invalid subaddress (limit 2 bits ) 
-          || ((p[activep]  & 0x01) != p[activep]) // invalid activate 0|1
+          || ((subaddress & 0x03) != subaddress)  // invalid subaddress/port (limit 2 bits ) 
+          || ((p[activeg]  & 0x01) != p[activeg]) // invalid activate/gate 0|1
+          || ((p[actives]  & 0x01) != p[actives]) // invalid state 0|1
           ) break; 
-          // Honour the configuration option (config.h) which allows the <a> command to be reversed
-#ifdef DCC_ACCESSORY_COMMAND_REVERSE
-          DCC::setAccessory(address, subaddress,p[activep]==0);
+// Honour the configuration option (config.h) which allows the <a> command port to be reversed
+#ifdef DCC_ACCESSORY_PORT_REVERSE
+          if (params==4) {
+            DCC::setAccessory(address, subaddress, p[activeg]==0, p[actives]); 
+          } else DCC::setAccessory(address, subaddress, p[activeg]==0, 0xFF);
 #else
-          DCC::setAccessory(address, subaddress,p[activep]==1);
+          if (params==4) {
+            DCC::setAccessory(address, subaddress, p[activeg]==1, p[actives]);
+          } else DCC::setAccessory(address, subaddress, p[activeg]==1, 0xFF);
 #endif
         }
         return;
@@ -504,7 +517,7 @@ void DCCEXParser::parse(Print *stream, byte *com, RingStream * ringStream)
         if (atCommandCallback && !ringStream) {
           DCCWaveform::mainTrack.setPowerMode(POWERMODE::OFF);
           DCCWaveform::progTrack.setPowerMode(POWERMODE::OFF);
-          atCommandCallback((HardwareSerial *)stream,com);
+          atCommandCallback((HardwareSerial *)stream, rxCmd);
           return;
         }
         break;

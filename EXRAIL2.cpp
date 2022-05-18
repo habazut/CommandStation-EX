@@ -18,7 +18,11 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
- */
+ *
+ *  Modifications
+ *  22-04-01 Metkom, modidx:1, added 0xFF to function's parameters
+ *
+ ***********************************************************************/
 
 /* EXRAILPlus planned FEATURE additions
    F1. [DONE] DCC accessory packet opcodes (short and long form)
@@ -756,7 +760,8 @@ void RMFT2::loop2() {
     int16_t addr=operand>>3;
     int16_t subaddr=(operand>>1) & 0x03;
     bool active=operand & 0x01;
-    DCC::setAccessory(addr,subaddr,active);
+    // modidx:1, added 0xFF to satisfy number of parameters with 'a' command with 4 parameters
+    DCC::setAccessory(addr,subaddr,active, 0xFF);
     break;
   }
     

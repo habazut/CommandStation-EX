@@ -192,7 +192,9 @@ wifiSerialState WifiInterface::setup2(const FSH* SSid, const FSH* password,
 
       // give a preconfigured ES8266 a chance to connect to a router
       // typical connect time approx 7 seconds
-      delay(8000);
+      // delay(8000); replaced by millis
+      unsigned long previousMillis = millis();
+      while (millis() - previousMillis < 8000) ;
       StringFormatter::send(wifiStream, F("AT+CIFSR\r\n"));
       if (checkForOK(5000, F("+CIFSR:STAIP"), true,false))
 	  if (!checkForOK(1000, F("0.0.0.0"), true,false))

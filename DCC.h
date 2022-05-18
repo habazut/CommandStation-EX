@@ -20,7 +20,12 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
- */
+ *
+ *  Modifications
+ *  22-04-01 Metkom, modidx:1, 'setAccessory' changed parameters
+ *
+ ***********************************************************************/
+
 #ifndef DCC_h
 #define DCC_h
 #include <Arduino.h>
@@ -108,7 +113,8 @@ public:
   static int  getFn(int cab, int16_t functionNumber);
   static uint32_t getFunctionMap(int cab);
   static void updateGroupflags(byte &flags, int16_t functionNumber);
-  static void setAccessory(int aAdd, byte aNum, bool activate);
+  // modidx:1, changed aAdd to address, aNum to port, activate to gate and added aState
+  static void setAccessory(int address, byte port, bool gate, byte aState);
   static bool writeTextPacket(byte *b, int nBytes);
   static void setProgTrackSyncMain(bool on); // when true, prog track becomes driveable
   static void setProgTrackBoost(bool on);    // when true, special prog track current limit does not apply

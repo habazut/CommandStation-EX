@@ -3,7 +3,13 @@
 
 #include "StringFormatter.h"
 
-#define VERSION "4.0.0"
+#define VERSION "4.0.9"
+// 4.0.9 Functional changes.
+//        Added support for 4-byte accessory decoder commands in order to turn on and off
+//          each decoder output individually (NMRA compliant).
+//        Added support for assigning an individual mac address if desired.
+//        Bugfix: Added a workaround for timing problems on receiving ethernet commands.
+//  ...
 // 4.0.0 Major functional and non-functional changes.
 //       Engine Driver "DriveAway" feature enhancement
 //.......JMRI feature enhancement. Provides for multiple additional DCC++EX wifi 

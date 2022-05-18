@@ -45,10 +45,10 @@
 // of the brake pin on the motor bridge is inverted
 // (HIGH == release brake)
 //
-// Arduino standard Motor Shield
+// Arduino standard Motor Shield, Pin 11, 13 geaendert zu 11, 2 (Mk 27.03.22)
 #define STANDARD_MOTOR_SHIELD F("STANDARD_MOTOR_SHIELD"),                                                 \
                               new MotorDriver(3, 12, UNUSED_PIN, UNUSED_PIN, A0, 2.99, 2000, UNUSED_PIN), \
-                              new MotorDriver(11, 13, UNUSED_PIN, UNUSED_PIN, A1, 2.99, 2000, UNUSED_PIN)
+                              new MotorDriver(11, 2, UNUSED_PIN, UNUSED_PIN, A1, 2.99, 2000, UNUSED_PIN)
 
 // Pololu Motor Shield
 #define POLOLU_MOTOR_SHIELD F("POLOLU_MOTOR_SHIELD"),                                                 \

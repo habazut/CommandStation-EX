@@ -71,7 +71,9 @@ void LiquidCrystal_I2C::begin() {
   // 100 milliseconds after pulling both RS and R/W and backlight pin low
   expanderWrite(
       _backlightval);  // reset expander and turn backlight off (Bit 8 =1)
-  delay(100);
+  // delay(100); replaced by millis
+  unsigned long previousMillis = millis();
+  while (millis() - previousMillis < 100) ;
 
   // put the LCD into 4 bit mode
   // this is according to the hitachi HD44780 datasheet

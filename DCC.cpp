@@ -22,7 +22,12 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with CommandStation.  If not, see <https://www.gnu.org/licenses/>.
- */
+ *
+ *  Modifications
+ *  22-04-01 Metkom, modidx:1, 'setAccessory' added code for 4 parameters 
+ *
+ ***********************************************************************/
+
 #include "DIAG.h"
 #include "DCC.h"
 #include "DCCWaveform.h"
@@ -237,23 +242,36 @@ uint32_t DCC::getFunctionMap(int cab) {
   return (reg<0)?0:speedTable[reg].functions;
 }
 
-void DCC::setAccessory(int address, byte number, bool activate) {
-  #ifdef DIAG_IO
-  DIAG(F("DCC::setAccessory(%d,%d,%d)"), address, number, activate);
-  #endif
+// modidx:1, added support for 4 parameter commands
+void DCC::setAccessory(int address, byte port, bool gate, byte oState) {
+#ifdef DIAG_IO
+  DIAG(F("DCC::setAccessory(%d,%d,%d,%d)"), address, port, gate, oState);
+#endif
   // use masks to detect wrong values and do nothing
   if(address != (address & 511))
     return;
-  if(number != (number & 3))
+  if(port != (port & 3))
     return;
   byte b[2];
 
-  b[0] = address % 64 + 128;                                     // first byte is of the form 10AAAAAA, where AAAAAA represent 6 least signifcant bits of accessory address
-  b[1] = ((((address / 64) % 8) << 4) + (number % 4 << 1) + activate % 2) ^ 0xF8; // second byte is of the form 1AAACDDD, where C should be 1, and the least significant D represent activate/deactivate
-
+  // first byte is of the form 10AAAAAA, where AAAAAA represents the 6 least signifcant bits of accessory address
+  b[0] = address % 64 + 128;
+  // 
+  if (oState == 0xFF) {
+    // second byte is of the form 1AAACDDD, where C should be 1, and the least significant D represents activate/deactivate
+    // (0x65 / 0x40 = 1 mod 8 = 0r1 << 4 = 16) + (0 mod 4 = 0r0 << 1 = 0) + (1 mod 2 = 0r1)
+    b[1] = ((((address / 64) % 8) << 4) + (port % 4 << 1) + (gate % 2)) ^ 0xF8;
+  } else {
+    // second byte is of the form 1AAACDDG, where C is the gate's on/off state (0/1), DD is the port (0-3), G is the gate red/green (0/1)
+    // (0x65 / 0x40 = 1 mod 8 = 0r1 << 4 = 16) + (1 mod 2 = 0r1 << 3 = 8) + (0 mod 4 = 0r0 << 1 = 0) + (1 mod 2 = 0r1)
+    b[1] = ((((address / 64) % 8) << 4) + (!oState % 2 << 3) + (port % 4 << 1) + (gate % 2)) ^ 0xF8;
+#ifdef DCC_ACCESSORY_OSTATE_REVERSE
+    b[1] = ((((address / 64) % 8) << 4) + (oState % 2 << 3) + (port % 4 << 1) + (gate % 2)) ^ 0xF8;
+#endif
+  }
   DCCWaveform::mainTrack.schedulePacket(b, 2, 4);      // Repeat the packet four times
 #if defined(EXRAIL_ACTIVE)
-  RMFT2::activateEvent(address<<2|number,activate);
+  RMFT2::activateEvent(address<<2|port,activate);
 #endif
 }
 
