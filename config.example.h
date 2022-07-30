@@ -52,6 +52,10 @@ The configuration file for DCC-EX Command Station
  new MotorDriver(D3, D5, UNUSED_PIN, UNUSED_PIN, UNUSED_PIN, 2.99, 2000, UNUSED_PIN),\
  new MotorDriver(D2, D6, UNUSED_PIN, UNUSED_PIN, A0        , 2.99, 2000, UNUSED_PIN)
 
+#define ESP32_STANDARD_MOTOR_SHIELD F("ESP32_STANDARD"),				\
+    new MotorDriver(25/* 3*/, 19/*12*/, UNUSED_PIN, 13/*9*/, UNUSED_PIN /*ADC12*/, 2.00, 2000, UNUSED_PIN, TIMER_PROG), \
+    new MotorDriver(23/*11*/, 18/*13*/, UNUSED_PIN, 12/*8*/, UNUSED_PIN /*ADC10*/, 2.00, 2000, UNUSED_PIN, RMT_MAIN)
+
 // ESP32 ADC1 only supported GPIO pins 32 to 39, for example
 // ADC1 CH4 = GPIO32, ADC1 CH5 = GPIO33, ADC1 CH0 = GPIO36
 //
@@ -61,11 +65,11 @@ The configuration file for DCC-EX Command Station
 //
 // Adjust conversion factor according to your voltage divider.
 //
-#define ESP32_MOTOR_SHIELD F("ESP32"), \
+#define ESP32_MOTOR_SHIELD_UNUSED F("ESP32"),				\
  new MotorDriver(16, 17, UNUSED_PIN, UNUSED_PIN, 32, 2.00, 2000, UNUSED_PIN),\
  new MotorDriver(18, 19, UNUSED_PIN, UNUSED_PIN, 33, 2.00, 2000, UNUSED_PIN)
 
-#define MOTOR_SHIELD_TYPE ESP32_MOTOR_SHIELD
+#define MOTOR_SHIELD_TYPE ESP32_STANDARD_MOTOR_SHIELD
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
