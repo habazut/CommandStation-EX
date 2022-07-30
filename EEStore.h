@@ -30,6 +30,7 @@ extern ExternalEEPROM EEPROM;
 #endif
 
 #define EESTORE_ID "DCC++1"
+#define SIZE_EESTORE_ID 7
 
 struct EEStoreData{
   char id[sizeof(EESTORE_ID)];

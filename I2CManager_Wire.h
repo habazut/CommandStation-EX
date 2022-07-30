@@ -98,7 +98,7 @@ uint8_t I2CManagerClass::read(uint8_t address, uint8_t readBuffer[], uint8_t rea
  * returned in the I2CRB as for the asynchronous version.
  ***************************************************************************/
 void I2CManagerClass::queueRequest(I2CRB *req) {
-  uint8_t status;
+  uint8_t status = 0;
   switch (req->operation) {
     case OPERATION_READ:
       status = read(req->i2cAddress, req->readBuffer, req->readLen, NULL, 0, req);
