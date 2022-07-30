@@ -65,11 +65,11 @@ The configuration file for DCC-EX Command Station
 //
 // Adjust conversion factor according to your voltage divider.
 //
-#define ESP32_MOTOR_SHIELD_UNUSED F("ESP32"),				\
+#define ESP32_MOTOR_SHIELD F("ESP32"),				\
  new MotorDriver(16, 17, UNUSED_PIN, UNUSED_PIN, 32, 2.00, 2000, UNUSED_PIN),\
  new MotorDriver(18, 19, UNUSED_PIN, UNUSED_PIN, 33, 2.00, 2000, UNUSED_PIN)
 
-#define MOTOR_SHIELD_TYPE ESP32_STANDARD_MOTOR_SHIELD
+#define MOTOR_SHIELD_TYPE ESP32_MOTOR_SHIELD
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
