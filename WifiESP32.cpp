@@ -21,6 +21,7 @@
 #include <vector>
 #include "defines.h"
 #include <WiFi.h>
+#include <WiFiUdp.h>
 #include "esp_wifi.h"
 #include "WifiESP32.h"
 #include "DIAG.h"
@@ -94,6 +95,7 @@ public:
 
 static std::vector<NetworkClient> clients; // a list to hold all clients
 static WiFiServer *server = NULL;
+static WiFiUDP *udpserver = NULL;
 static RingStream *outboundRing = new RingStream(10240);
 static bool APmode = false;
 
@@ -210,7 +212,9 @@ bool WifiESP::setup(const char *SSid,
     return false;
   }
   server = new WiFiServer(port); // start listening on tcp port
+  udpserver = new WiFiUDP();
   server->begin();
+  udpserver->begin(port);
   // server started here
 
 #ifdef WIFI_TASK_ON_CORE0
@@ -295,6 +299,20 @@ void WifiESP::loop() {
 	}
       }
     } // all clients
+    {
+      int len;
+      if ((len = udpserver->parsePacket()) > 0) {
+	DIAG(F("UDP from IP %s port %d"),udpserver->remoteIP().toString().c_str(),udpserver->remotePort());
+
+	// read data from client
+	byte cmd[len+1];
+	for(int i=0; i<len; i++) {
+	  cmd[i]=udpserver->read();
+	}
+	cmd[len]=0;
+	CommandDistributor::parse(17,cmd,outboundRing);
+      }
+    }
 
     WiThrottle::loop(outboundRing);
 
