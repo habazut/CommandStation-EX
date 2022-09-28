@@ -42,11 +42,11 @@ DCLoco::DCLoco(byte pin1, byte pin2, int l){
     lightPin = FWD_LIGHT_PIN;
     lightPin2 = REV_LIGHT_PIN;
     pinMode(lightPin, OUTPUT);
-    digitalWrite(lightPin, 0);
+    //digitalWrite(lightPin, 1);
     pinMode(lightPin2, OUTPUT);
-    digitalWrite(lightPin2, 0);
-    ledcSetup(lightChannel, 1000, 8); // channel, Hz, bits resolution
-    ledcWrite(lightChannel, 255);     // full intensity
+    //digitalWrite(lightPin2, 1);
+    DIAG(F("ledcSetup %d"), ledcSetup(lightChannel, 1000, 8)); // channel, Hz, bits resolution
+    ledcWrite(lightChannel, 250);     // full intensity
     f0On = true;
     //setF0dir(); // called by pwmSpeed
   } else {

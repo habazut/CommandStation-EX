@@ -24,6 +24,10 @@
 #include "DIAG.h"
 #include "defines.h"
 
+#include "esp32-hal.h"
+#include "soc/soc_caps.h"
+#include "driver/ledc.h"
+
 #ifndef UNUSED_PIN
 #define UNUSED_PIN 127
 #endif
@@ -74,13 +78,16 @@ class DCLoco {
     pwmSpeed(tSpeed);
   }
   inline void warningLight(bool on) {
+    DIAG(F("WarningLight %d"), on);
     if (on) {
-      ledcSetup(lightChannel, 1, 8);
-      ledcWrite(lightChannel, 25); // 10% PWM
+      //ledcSetup(lightChannel, 1, 8);
+      ledc_set_freq((ledc_mode_t)(lightChannel/8), (ledc_timer_t)((lightChannel/2)%4), 5);
+      //ledcWrite(lightChannel, 25); // 10% PWM
+      ledc_set_duty((ledc_mode_t)(lightChannel/8), (ledc_channel_t)(lightChannel%8), 10);
       if (lightPin != UNUSED_PIN)
-	ledcAttachPin(lightPin, lightChannel);
+	ledc_set_pin(lightPin, (ledc_mode_t)(lightChannel/8), (ledc_channel_t)(lightChannel%8));
       if (lightPin2 != UNUSED_PIN)
-	ledcAttachPin(lightPin2, lightChannel);
+	ledc_set_pin(lightPin2, (ledc_mode_t)(lightChannel/8), (ledc_channel_t)(lightChannel%8));
       warninglight = true;
     } else {
       ledcSetup(lightChannel, 1000, 8); // channel, Hz, bits resolution
@@ -93,6 +100,9 @@ class DCLoco {
     switch (fnum) {
     case 0:
       setF0(state);
+      break;
+    case 14:
+      warningLight(state);
       break;
     case 15:
       esp_deep_sleep_start();
@@ -124,15 +134,22 @@ private:
     DIAG(F("setF0dir on=%d dir=%d"), f0On, directionDC);
     if (f0On) {
       if(directionDC) {
-	if (lightPin != UNUSED_PIN)
-	  ledcAttachPin(lightPin, lightChannel);
+	if (lightPin != UNUSED_PIN) {
+	  ledc_set_pin(lightPin, (ledc_mode_t)(lightChannel/8), (ledc_channel_t)(lightChannel%8));
+	    //ledcAttachPin(lightPin, lightChannel);
+	  DIAG(F("ledcAttachPin %d %d %d"), lightPin, lightChannel, ledcRead(lightChannel));
+	}
 	if (lightPin2 != UNUSED_PIN) {
+	  //gpio_set_level(lightPin2, 0);
 	  ledcDetachPin(lightPin2);
 	  digitalWrite(lightPin2, 0);
 	}
       } else {
-	if (lightPin2 != UNUSED_PIN)
-	  ledcAttachPin(lightPin2, lightChannel);
+	if (lightPin2 != UNUSED_PIN) {
+	  DIAG(F("ledcAttachPin %d %d"), lightPin2, lightChannel);
+	  ledc_set_pin(lightPin2, (ledc_mode_t)(lightChannel/8), (ledc_channel_t)(lightChannel%8));
+	  //ledcAttachPin(lightPin2, lightChannel);
+	}
 	if (lightPin != UNUSED_PIN) {
 	  ledcDetachPin(lightPin);
 	  digitalWrite(lightPin, 0);
