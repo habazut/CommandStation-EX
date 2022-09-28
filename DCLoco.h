@@ -24,6 +24,8 @@
 #include "DIAG.h"
 #include "defines.h"
 
+// need this because of bug in ledcAttachPin() in esp pkg version 2.0.4
+// which resets duty cycle to 0 instead of just attaching pin.
 #include "esp32-hal.h"
 #include "soc/soc_caps.h"
 #include "driver/ledc.h"
@@ -102,9 +104,13 @@ class DCLoco {
       setF0(state);
       break;
     case 14:
+      // this is to test the I have no electricity
+      // warning light only
       warningLight(state);
       break;
     case 15:
+      // this puts the esp in deep sleep as when the
+      // battery level is too low
       esp_deep_sleep_start();
       break;
     }
@@ -136,18 +142,17 @@ private:
       if(directionDC) {
 	if (lightPin != UNUSED_PIN) {
 	  ledc_set_pin(lightPin, (ledc_mode_t)(lightChannel/8), (ledc_channel_t)(lightChannel%8));
-	    //ledcAttachPin(lightPin, lightChannel);
-	  DIAG(F("ledcAttachPin %d %d %d"), lightPin, lightChannel, ledcRead(lightChannel));
+	  //removed because of bug in API
+	  //ledcAttachPin(lightPin, lightChannel);
 	}
 	if (lightPin2 != UNUSED_PIN) {
-	  //gpio_set_level(lightPin2, 0);
 	  ledcDetachPin(lightPin2);
 	  digitalWrite(lightPin2, 0);
 	}
       } else {
 	if (lightPin2 != UNUSED_PIN) {
-	  DIAG(F("ledcAttachPin %d %d"), lightPin2, lightChannel);
 	  ledc_set_pin(lightPin2, (ledc_mode_t)(lightChannel/8), (ledc_channel_t)(lightChannel%8));
+	  //removed because of bug in API
 	  //ledcAttachPin(lightPin2, lightChannel);
 	}
 	if (lightPin != UNUSED_PIN) {
