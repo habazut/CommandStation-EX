@@ -68,14 +68,27 @@ void disableCoreWDT(byte core){
 }
 */
 
+class TCPNetworkClient;
+
 class NetworkClient {
 public:
+  virtual bool ok();
+  /*
   NetworkClient(WiFiClient c) {
+    TCPNetworkClient(c);
+  };
+  */
+};
+
+class TCPNetworkClient : NetworkClient {
+public:
+  TCPNetworkClient(WiFiClient c) {
     wifi = c;
   };
   bool ok() {
     return (inUse && wifi.connected());
   };
+  /*
   bool recycle(WiFiClient c) {
 
     if (inUse == true) return false;
@@ -89,8 +102,40 @@ public:
     inUse = true;
     return true;
   };
+  */
+private:
   WiFiClient wifi;
   bool inUse = true;
+};
+
+class UDPNetworkClient : NetworkClient {
+public:
+  UDPNetworkClient(IPAddress i, uint16_t p) {
+    udpClient = new WiFiUdp();
+    remoteIP = i;
+    remotePort = p;
+  };
+  bool ok() {
+    return true; // not much to do for UDP
+  };
+  /*
+  bool recycle(WiFiClient c) {
+    return false; // for now
+  };
+  */
+  size_t send(const uint8_t *buffer, size_t size){
+    size_t s;
+    if (!udpClient.beginPacket()) // need init?
+      udpClient.beginPacket(remoteIP, remotePort);
+    s = udpClient.write(buffer, size); // no error handling for s<size yet
+    udpClient.endPacket();
+    return s;
+  };
+
+private:
+  WiFiUdp udpClient;
+  IPAddress remoteIP;
+  uint16_t remotePort;
 };
 
 static std::vector<NetworkClient> clients; // a list to hold all clients
@@ -271,16 +316,18 @@ void WifiESP::loop() {
     if (server->hasClient()) {
       WiFiClient client;
       while (client = server->available()) {
+	/* XXX recycle later (maybe)
 	for (clientId=0; clientId<clients.size(); clientId++){
 	  if (clients[clientId].recycle(client)) {
 	    DIAG(F("Recycle client %d %s"), clientId, client.remoteIP().toString().c_str());
 	    break;
 	  }
 	}
-	if (clientId>=clients.size()) {
-	  NetworkClient nc(client);
+	*/
+	if (true /*clientId>=clients.size()*/) {
+	  TCPNetworkClient nc(client);
 	  clients.push_back(nc);
-	  DIAG(F("New client %d, %s"), clientId, client.remoteIP().toString().c_str());
+	  DIAG(F("New TCP client %d, %s"), clientId, client.remoteIP().toString().c_str());
 	}
       }
     }
@@ -298,7 +345,7 @@ void WifiESP::loop() {
 	  CommandDistributor::parse(clientId,cmd,outboundRing);
 	}
       }
-    } // all clients
+    } // all TCP clients
     {
       int len;
       if ((len = udpserver->parsePacket()) > 0) {
