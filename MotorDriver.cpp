@@ -32,9 +32,10 @@
 
 bool MotorDriver::usePWM=false;
 bool MotorDriver::commonFaultPin=false;
+
        
 MotorDriver::MotorDriver(byte power_pin, byte signal_pin, byte signal_pin2, int8_t brake_pin,
-                         byte current_pin, float sense_factor, unsigned int trip_milliamps, byte fault_pin) {
+                         byte current_pin, float sense_factor, unsigned int trip_milliamps, int8_t fault_pin) {
   powerPin=power_pin;
   getFastPin(F("POWER"),powerPin,fastPowerPin);
   pinMode(powerPin, OUTPUT);
@@ -69,6 +70,9 @@ MotorDriver::MotorDriver(byte power_pin, byte signal_pin, byte signal_pin2, int8
 
   faultPin=fault_pin;
   if (faultPin != UNUSED_PIN) {
+    invertFault=fault_pin < 0;
+    faultPin=invertFault ? 0-fault_pin : fault_pin;
+    DIAG(F("Fault pin = %d invert %d"), faultPin, invertFault);
     getFastPin(F("FAULT"),faultPin, 1 /*input*/, fastFaultPin);
     pinMode(faultPin, INPUT);
   }
@@ -163,8 +167,12 @@ int MotorDriver::getCurrentRaw() {
   if (sreg_backup & 128) sei();  /* restore interrupt state */
 #endif // outer #
   if (current<0) current=0-current;
-  if ((faultPin != UNUSED_PIN)  && isLOW(fastFaultPin) && isHIGH(fastPowerPin))
+  if ((faultPin != UNUSED_PIN) && isHIGH(fastPowerPin)) {
+    if (invertFault && isLOW(fastFaultPin))
       return (current == 0 ? -1 : -current);
+    if (!invertFault && !isLOW(fastFaultPin))
+      return (current == 0 ? -1 : -current);
+  }
   return current;
   // IMPORTANT:  This function can be called in Interrupt() time within the 56uS timer
   //             The default analogRead takes ~100uS which is catastrphic

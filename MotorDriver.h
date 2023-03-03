@@ -46,7 +46,7 @@ struct FASTPIN {
 class MotorDriver {
   public:
     MotorDriver(byte power_pin, byte signal_pin, byte signal_pin2, int8_t brake_pin, 
-                byte current_pin, float senseFactor, unsigned int tripMilliamps, byte faultPin);
+                byte current_pin, float senseFactor, unsigned int tripMilliamps, int8_t faultPin);
     virtual void setPower( bool on);
     virtual void setSignal( bool high);
     virtual void setBrake( bool on);
@@ -73,6 +73,7 @@ class MotorDriver {
     bool dualSignal;       // true to use signalPin2
     bool invertBrake;       // brake pin passed as negative means pin is inverted
     float senseFactor;
+    bool invertFault;       // fault pin passed as negative means pin is inverted
     int senseOffset;
     unsigned int tripMilliamps;
     int rawCurrentTripValue;
