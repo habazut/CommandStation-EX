@@ -32,7 +32,16 @@
 #include "TrackManager.h"
 #include "StringFormatter.h"
 
-// variables to hold clock time
+class FastClock {
+public:
+  FastClock() {
+    time = 0;
+    rate = 255;
+  };
+  int16_t time;
+  int8_t rate;
+};
+FastClock lastclock;
 int16_t lastclocktime;
 int8_t lastclockrate;
 
