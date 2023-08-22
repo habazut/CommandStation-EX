@@ -72,6 +72,32 @@ void IRAM_ATTR interrupt(rmt_channel_t channel, void *t) {
     DCCTimer::updateMinimumFreeMemoryISR(0);
 }
 
+static void IRAM_ATTR direct_interrupt(void* arg) {
+  uint32_t intr_st = RMT.int_st.val;
+  rmt_channel_t channel;
+  uint32_t CHAN_0_MASK=0b000000001; // END TX channel 0
+  uint32_t CHAN_2_MASK=0b001000000; // END TX channel 2
+  //uint32_t CHAN_0_MASK=0b001000000000000000000000000; // Threshold channel 0
+  //uint32_t CHAN_2_MASK=0b100000000000000000000000000; // Threshold channel 2
+
+  if (intr_st & CHAN_0_MASK) { 
+    channel = (rmt_channel_t)0;
+    interrupt(channel, arg);
+    intr_st -= CHAN_0_MASK;
+    RMT.int_clr.val = CHAN_0_MASK;
+  }
+  if (intr_st & CHAN_2_MASK) { 
+    channel = (rmt_channel_t)2;
+    interrupt(channel, arg);
+    intr_st -= CHAN_2_MASK;
+    RMT.int_clr.val = CHAN_2_MASK;
+  }
+  if (intr_st) { // something left - should not be
+//    Serial.print("Unhandled ");
+//    Serial.print(intr_st);
+  }
+}
+
 RMTChannel::RMTChannel(pinpair pins, bool isMain) {
   byte ch;
   byte plen;
@@ -138,13 +164,19 @@ RMTChannel::RMTChannel(pinpair pins, bool isMain) {
   gpio_matrix_out(gpioNum, RMT_SIG_OUT0_IDX, 0, 0);
   */
   
-  // NOTE: ESP_INTR_FLAG_IRAM is *NOT* included in this bitmask
-  ESP_ERROR_CHECK(rmt_driver_install(config.channel, 0, ESP_INTR_FLAG_LOWMED|ESP_INTR_FLAG_SHARED));
+  // NOTE: ESP_INTR_FLAG_IRAM is *NOT* included in this bitmask (should it be used?)
+  // https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/intr_alloc.html
+  // ESP_ERROR_CHECK(rmt_driver_install(config.channel, 0, ESP_INTR_FLAG_LOWMED|ESP_INTR_FLAG_SHARED|ESP_INTR_FLAG_LEVEL3));
 
+  ESP_ERROR_CHECK(rmt_isr_register(direct_interrupt, NULL, ESP_INTR_FLAG_LOWMED|ESP_INTR_FLAG_SHARED|ESP_INTR_FLAG_LEVEL3|ESP_INTR_FLAG_IRAM, NULL));
+  // NAH... rmt_set_tx_thr_intr_en(channel, true, 1);
+  
   // DIAG(F("Register interrupt on core %d"), xPortGetCoreID());
 
   ESP_ERROR_CHECK(rmt_set_tx_loop_mode(channel, true));
   channelHandle[channel] = this; // used by interrupt
+
+  //rmt_set_tx_thr_intr_en(channel, true, 10);
   rmt_register_tx_end_callback(interrupt, 0);
   rmt_set_tx_intr_en(channel, true);
 
@@ -204,10 +236,32 @@ int RMTChannel::RMTfillData(const byte buffer[], byte byteCount, byte repeatCoun
 void IRAM_ATTR RMTChannel::RMTinterrupt() {
   //no rmt_tx_start(channel,true) as we run in loop mode
   //preamble is always loaded at beginning of buffer
+#ifdef SCOPE
+  static long old = 0;
+  static byte level=0;
+  static long fuzz=0;
+  long expected=6165;
+  long now;
+  long diff;
+  if(channel == 0) {
+    digitalWrite(26, level);
+    now = micros();
+    if (old == 0)
+      diff = expected;
+    else
+      diff = now - old;
+    fuzz += diff - expected;
+    old = now;
+    (void)diff;
+//    if (packetCounter % 100 == 0)
+//      DIAG("%l", fuzz);
+  }
+#endif
+
   packetCounter++;
   if (!dataReady && dataRepeat == 0) { // we did run empty
     rmt_fill_tx_items(channel, idle, idleLen, preambleLen-1);
-    return; // nothing to do about that
+    goto out; // nothing to do about that
   }
 
   // take care of incoming data
@@ -219,6 +273,10 @@ void IRAM_ATTR RMTChannel::RMTinterrupt() {
   }
   if (dataRepeat > 0)         // if a repeat count was specified, work on that
     dataRepeat--;
+out:
+#ifdef SCOPE
+  if(channel == 0) digitalWrite(26, !level);
+#endif
 }
 
 bool RMTChannel::addPin(byte pin, bool inverted) {

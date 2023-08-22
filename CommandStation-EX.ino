@@ -75,7 +75,11 @@ void setup()
   SerialManager::init();
 
   DIAG(F("License GPLv3 fsf.org (c) dcc-ex.com"));
-
+#ifdef SCOPE
+  pinMode(26, OUTPUT);
+  digitalWrite(26, HIGH);
+  #warning foo
+#endif
 // Initialise HAL layer before reading EEprom or setting up MotorDrivers 
   IODevice::begin();
 

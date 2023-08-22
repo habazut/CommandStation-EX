@@ -128,7 +128,6 @@ bool WifiESP::setup(const char *SSid,
   //#ifdef SERIAL_BT_COMMANDS
   //return false;
   //#endif
-
   // tests
   //  enableCoreWDT(1);
   //  disableCoreWDT(0);
@@ -136,6 +135,9 @@ bool WifiESP::setup(const char *SSid,
   // clean start
   WiFi.mode(WIFI_STA);
   WiFi.disconnect(true);
+
+  WiFi.mode(WIFI_OFF);
+  return(0);
   // differnet settings that did not improve for haba
   // WiFi.useStaticBuffers(true);
   // WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
