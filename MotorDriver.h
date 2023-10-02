@@ -263,7 +263,9 @@ class MotorDriver {
     bool invertBrake;       // brake pin passed as negative means pin is inverted
     bool invertPower;       // power pin passed as negative means pin is inverted
     bool invertFault;       // fault pin passed as negative means pin is inverted
-    
+#if defined(ARDUINO_ARCH_ESP32)
+    bool invertPhase = 0;   // phase of out pin is inverted (ESP32 only)
+#endif
     // Raw to milliamp conversion factors avoiding float data types.
     // Milliamps=rawADCreading * sensefactorInternal / senseScale
     //

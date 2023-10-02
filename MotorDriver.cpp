@@ -605,6 +605,15 @@ void MotorDriver::checkPowerOverload(bool useProgLimit, byte trackno) {
 	DIAG(F("TRACK %c ALERT FAULT"), trackno + 'A');
       }
       setPower(POWERMODE::ALERT);
+#if defined(ARDUINO_ARCH_ESP32)
+      invertPhase = !invertPhase;
+      pinpair p = getSignalPin();
+      DIAG(F("TRACK %c SHIFT %x = %x"), trackno + 'A', (uint32_t *)(GPIO_FUNC0_OUT_SEL_CFG_REG+4*p.pin), *(uint32_t *)(GPIO_FUNC0_OUT_SEL_CFG_REG+4*p.pin));
+      if (invertPhase)
+	*(uint32_t *)(GPIO_FUNC0_OUT_SEL_CFG_REG+4*p.pin) |=  ((uint32_t)0x1 << GPIO_FUNC0_OUT_INV_SEL_S);
+      else
+	*(uint32_t *)(GPIO_FUNC0_OUT_SEL_CFG_REG+4*p.pin) &= ~((uint32_t)0x1 << GPIO_FUNC0_OUT_INV_SEL_S);
+#endif
       break;
     }
     // all well
