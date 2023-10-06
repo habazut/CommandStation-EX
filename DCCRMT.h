@@ -34,16 +34,7 @@ class RMTChannel {
  public:
   RMTChannel(pinpair pins, bool isMain);
   bool addPin(byte pin, bool inverted=0);
-  bool addPin(pinpair pins, bool inverted=0);
-  inline void removePin(byte pin) {
-    if (pin == UNUSED_PIN) return;
-    gpio_reset_pin((gpio_num_t)pin);
-    pinMode(pin, OUTPUT); // gpio_reset_pin may reset to input
-  };
-  inline void removePin(pinpair pins) {
-    removePin(pins.pin);
-    removePin(pins.invpin);
-  };
+  bool addPin(pinpair pins);
   void IRAM_ATTR RMTinterrupt();
   void RMTprefill();
   //int RMTfillData(dccPacket packet);
