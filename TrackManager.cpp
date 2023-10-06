@@ -196,8 +196,8 @@ void TrackManager::setPROGSignal( bool on) {
 void TrackManager::setDCSignal(int16_t cab, byte speedbyte) {
   FOR_EACH_TRACK(t) {
     if (trackDCAddr[t]!=cab && cab != 0) continue;
-    if (track[t]->getMode()==TRACK_MODE_DC) track[t]->setDCSignal(speedbyte);
-    else if (track[t]->getMode()==TRACK_MODE_DCX) track[t]->setDCSignal(speedbyte ^ 128);
+    if (track[t]->getMode() & (TRACK_MODE_DC|TRACK_MODE_DCX))
+      track[t]->setDCSignal(speedbyte);
   }
 }    
 
@@ -319,8 +319,6 @@ bool TrackManager::setTrackMode(byte trackToSet, TRACK_MODE mode, int16_t dcAddr
 
 void TrackManager::applyDCSpeed(byte t) {
   uint8_t speedByte=DCC::getThrottleSpeedByte(trackDCAddr[t]);
-  if (track[t]->getMode()==TRACK_MODE_DCX)
-    speedByte = speedByte ^ 128; // reverse direction bit
   track[t]->setDCSignal(speedByte);
 }
 
