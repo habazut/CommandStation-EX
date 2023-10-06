@@ -170,6 +170,12 @@ class MotorDriver {
 	pinMode(signalPin, OUTPUT);
       else
 	pinMode(signalPin, INPUT);
+      if (signalPin2 != UNUSED_PIN) {
+	if (on)
+	  pinMode(signalPin2, OUTPUT);
+	else
+	  pinMode(signalPin2, INPUT);
+      }
     };
     inline pinpair getSignalPin() { return pinpair(signalPin,signalPin2); };
     void setDCSignal(byte speedByte);

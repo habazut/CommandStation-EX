@@ -222,11 +222,9 @@ bool TrackManager::setTrackMode(byte trackToSet, TRACK_MODE mode, int16_t dcAddr
     pinpair p = track[trackToSet]->getSignalPin();
     //DIAG(F("Track=%c remove  pin %d"),trackToSet+'A', p.pin);
     gpio_reset_pin((gpio_num_t)p.pin);
-    pinMode(p.pin, OUTPUT); // gpio_reset_pin may reset to input
     if (p.invpin != UNUSED_PIN) {
       //DIAG(F("Track=%c remove ^pin %d"),trackToSet+'A', p.invpin);
       gpio_reset_pin((gpio_num_t)p.invpin);
-      pinMode(p.invpin, OUTPUT); // gpio_reset_pin may reset to input
     }
 #endif
 #ifndef DISABLE_PROG
