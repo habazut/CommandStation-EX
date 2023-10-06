@@ -226,6 +226,13 @@ bool TrackManager::setTrackMode(byte trackToSet, TRACK_MODE mode, int16_t dcAddr
       //DIAG(F("Track=%c remove ^pin %d"),trackToSet+'A', p.invpin);
       gpio_reset_pin((gpio_num_t)p.invpin);
     }
+    if (mode == TRACK_MODE_EXT) {
+      pinMode(26, INPUT);
+      gpio_matrix_in(26, SIG_IN_FUNC228_IDX, false); //pads 224 to 228 available as loopback
+      gpio_matrix_out(p.pin, SIG_IN_FUNC228_IDX, false, false);
+      if (p.invpin != UNUSED_PIN) {
+	gpio_matrix_out(p.invpin, SIG_IN_FUNC228_IDX, true, false);
+    }
 #endif
 #ifndef DISABLE_PROG
     if (mode==TRACK_MODE_PROG) {
@@ -258,10 +265,12 @@ bool TrackManager::setTrackMode(byte trackToSet, TRACK_MODE mode, int16_t dcAddr
       track[trackToSet]->setBrake(false);
     }
 
+#ifndef ARDUINO_ARCH_ESP32
     // EXT is a special case where the signal pin is
     // turned off. So unless that is set, the signal
     // pin should be turned on
     track[trackToSet]->enableSignal(mode != TRACK_MODE_EXT);
+#endif
 
 #ifndef ARDUINO_ARCH_ESP32
     // re-evaluate HighAccuracy mode
