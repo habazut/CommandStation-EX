@@ -226,12 +226,14 @@ bool TrackManager::setTrackMode(byte trackToSet, TRACK_MODE mode, int16_t dcAddr
       //DIAG(F("Track=%c remove ^pin %d"),trackToSet+'A', p.invpin);
       gpio_reset_pin((gpio_num_t)p.invpin);
     }
+
     if (mode == TRACK_MODE_EXT) {
       pinMode(26, INPUT);
       gpio_matrix_in(26, SIG_IN_FUNC228_IDX, false); //pads 224 to 228 available as loopback
       gpio_matrix_out(p.pin, SIG_IN_FUNC228_IDX, false, false);
       if (p.invpin != UNUSED_PIN) {
-	gpio_matrix_out(p.invpin, SIG_IN_FUNC228_IDX, true, false);
+	gpio_matrix_out(p.invpin, SIG_IN_FUNC228_IDX, true /*inverted*/, false);
+      }
     }
 #endif
 #ifndef DISABLE_PROG
