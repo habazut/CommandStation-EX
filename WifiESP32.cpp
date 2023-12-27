@@ -37,6 +37,8 @@
 
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
+#include "soc/dport_reg.h"
+
 void feedTheDog0(){
   // feed dog 0
   TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE; // write enable
@@ -253,6 +255,16 @@ bool WifiESP::setup(const char *SSid,
     DIAG(F("Wifi setup failed to add withrottle service to mDNS"));
   }
 
+  ///TEST TEST TEST
+  DIAG(F("DPORT_PRO_INTR_STATUS_0_REG: %x"), DPORT_REG_READ(DPORT_PRO_INTR_STATUS_0_REG));
+  DIAG(F("DPORT_APP_INTR_STATUS_0_REG: %x"), DPORT_REG_READ(DPORT_APP_INTR_STATUS_0_REG));
+  DIAG(F("DPORT_PRO_MAC_INTR_MAP_REG: %x"), DPORT_REG_READ(DPORT_PRO_MAC_INTR_MAP_REG));
+  DIAG(F("DPORT_APP_MAC_INTR_MAP_REG: %x"), DPORT_REG_READ(DPORT_APP_MAC_INTR_MAP_REG));
+  DIAG(F("DPORT_PRO_MAC_NMI_MAP_REG: %x"), DPORT_REG_READ(DPORT_PRO_MAC_NMI_MAP_REG));
+  DIAG(F("DPORT_APP_MAC_NMI_MAP_REG: %x"), DPORT_REG_READ(DPORT_APP_MAC_NMI_MAP_REG));
+  DIAG(F("DPORT_PRO_RMT_INTR_MAP_REG: %x"), DPORT_REG_READ(DPORT_PRO_RMT_INTR_MAP_REG));
+  DIAG(F("DPORT_APP_RMT_INTR_MAP_REG: %x"), DPORT_REG_READ(DPORT_APP_RMT_INTR_MAP_REG));
+  
   server = new WiFiServer(port); // start listening on tcp port
   server->begin();
   // server started here

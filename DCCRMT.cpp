@@ -68,8 +68,8 @@ RMTChannel *channelHandle[8] = { 0 };
 void IRAM_ATTR interrupt(rmt_channel_t channel, void *t) {
   RMTChannel *tt = channelHandle[channel];
   if (tt) tt->RMTinterrupt();
-  if (channel == 0)
-    DCCTimer::updateMinimumFreeMemoryISR(0);
+//  if (channel == 0)
+//    DCCTimer::updateMinimumFreeMemoryISR(0);
 }
 
 RMTChannel::RMTChannel(pinpair pins, bool isMain) {
@@ -139,7 +139,7 @@ RMTChannel::RMTChannel(pinpair pins, bool isMain) {
   */
   
   // NOTE: ESP_INTR_FLAG_IRAM is *NOT* included in this bitmask
-  ESP_ERROR_CHECK(rmt_driver_install(config.channel, 0, ESP_INTR_FLAG_LOWMED|ESP_INTR_FLAG_SHARED));
+  ESP_ERROR_CHECK(rmt_driver_install(config.channel, 0, ESP_INTR_FLAG_LEVEL1));
 
   // DIAG(F("Register interrupt on core %d"), xPortGetCoreID());
 
