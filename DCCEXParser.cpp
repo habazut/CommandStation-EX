@@ -116,6 +116,9 @@ Once a new OPCODE is decided upon, update this list.
 #include "EXRAIL2.h"
 #include "Turntables.h"
 #include "version.h"
+#ifdef ARDUINO_ARCH_ESP32
+#include "WifiESP32.h"
+#endif
 
 // This macro can't be created easily as a portable function because the
 // flashlist requires a far pointer for high flash access. 
@@ -246,6 +249,10 @@ int16_t DCCEXParser::splitValues(int16_t result[MAX_COMMAND_PARAMS], const byte 
                 runningValue = ((runningValue << 5) + runningValue) ^ hot;
                 break;
             }
+	    if (hot=='.')
+	    {
+	      break;
+	    }
             result[parameterCount] = runningValue * (signNegative ? -1 : 1);
             parameterCount++;
             state = 1;
@@ -476,6 +483,22 @@ void DCCEXParser::parseOne(Print *stream, byte *com, RingStream * ringStream)
 	break;
       DCC::writeCVBitMain(p[0], p[1], p[2], p[3]);
       return;
+#endif
+
+#if defined(ARDUINO_ARCH_ESP32)
+    case 'h':
+    {
+      char host[16];
+      DIAG(F("Parseh: %s"), com+2);
+      strncpy(host,(char *)com+2,16);
+      host[15]= '\0';
+      int8_t last = strlen(host)-1;
+      if (last>=0 && host[last] == '>')
+	host[last] = '\0';
+      if(WifiESP::addHost(host))
+	return;
+      break;
+    }
 #endif
 
     case 'M': // WRITE TRANSPARENT DCC PACKET MAIN <M REG X1 ... X9>

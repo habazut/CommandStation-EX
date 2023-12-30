@@ -35,6 +35,7 @@ public:
 		    const byte channel,
 			const bool forceAP);
   static void loop();
+  static bool addHost(char *host);
 private:
 };
 #endif //WifiESP8266_h

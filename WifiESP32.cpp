@@ -128,6 +128,15 @@ char asciitolower(char in) {
   return in;
 }
 
+bool WifiESP::addHost(char *host) {
+    WiFiClient client;
+    if (!client.connect(host, 2560))
+      return false;
+    NetworkClient nc(client);
+    clients.push_back(nc);
+    return true;
+}
+
 bool WifiESP::setup(const char *SSid,
                     const char *password,
                     const char *hostname,
