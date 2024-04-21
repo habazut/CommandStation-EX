@@ -57,6 +57,7 @@ class Z21Throttle {
 		static Z21Throttle* getOrAddThrottle(int clientId);
 		static void broadcastNotifyTurnout(uint16_t addr, bool isClosed);
 		static void broadcastNotifySensor(uint16_t addr, bool state);
+		static void broadcastTrackInfo(bool state);
 		static void markForBroadcast(int cab);
 		static void forget(byte clientId);
 		static void findUniqThrottle(int id, char *u);
@@ -131,6 +132,7 @@ class Z21Throttle {
 		void notifyTurnoutInfo(byte inMSB, byte inLSB, bool isClosed);
 		void notifySensor(uint16_t addr);
 		void notifySensor(uint16_t addr, bool state);
+		void notifyTrackInfo(bool state);
 		void notifyLocoMode(byte inMSB, byte inLSB);
 		void notifyFirmwareVersion();
 		void notifyHWInfo();
@@ -190,9 +192,12 @@ class Z21Throttle {
 #define LAN_X_HEADER_CV_READ 0x23
 #define LAN_X_HEADER_CV_WRITE 0x24
 #define LAN_X_HEADER_CV_POM 0xE6
+#define LAN_X_HEADER_TRACK_INFO 0x61
+#define LAN_X_HEADER_STATUS_CHANGED 0x62
 
 #define LAN_X_DB0_READ_REGISTER 0x11
 #define LAN_X_DB0_GET_VERSION 0x21
+#define LAN_X_DB0_STATUS_CHANGED 0x22
 #define LAN_X_DB0_GET_STATUS 0x24
 #define LAN_X_DB0_SET_TRACK_POWER_OFF 0x80
 #define LAN_X_DB0_SET_TRACK_POWER_ON 0x81

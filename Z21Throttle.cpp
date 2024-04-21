@@ -184,6 +184,11 @@ void Z21Throttle::broadcastNotifySensor(uint16_t addr, bool state) {
     wt->notifySensor(addr, state);
   }
 }
+void Z21Throttle::broadcastTrackInfo(bool status) {
+  for (Z21Throttle* wt = firstThrottle; wt != NULL ; wt = wt->nextThrottle)  {
+    wt->notifyTrackInfo(status);
+  }
+}
 
 void Z21Throttle::forget( byte clientId) {
 	for (Z21Throttle* wt=firstThrottle; wt!=NULL ; wt=wt->nextThrottle)  
@@ -416,6 +421,20 @@ void Z21Throttle::notifyLocoInfo(byte inMSB, byte inLSB) {
 	Z21Throttle::replyBuffer[8] = functionMap & 0xFF; // function F29 to F31; F28 is bit0
 
 	notify(HEADER_LAN_XPRESS_NET, LAN_X_HEADER_LOCO_INFO, Z21Throttle::replyBuffer, 9, false);
+}
+
+void Z21Throttle::notifyTrackInfo(bool state) {
+  // Q&D fix:
+  // 0x00 LAN_X_BC_TRACK_POWER_OFF 
+  // 0x01 LAN_X_BC_TRACK_POWER_ON 
+  Z21Throttle::replyBuffer[0] = state;
+  notify(HEADER_LAN_XPRESS_NET, LAN_X_HEADER_TRACK_INFO, Z21Throttle::replyBuffer, 1, false);
+  Z21Throttle::replyBuffer[0] = LAN_X_DB0_STATUS_CHANGED;
+  if (state)
+    Z21Throttle::replyBuffer[1] = 0x00;
+  else
+    Z21Throttle::replyBuffer[1] = 0x02;
+  notify(HEADER_LAN_XPRESS_NET, LAN_X_HEADER_STATUS_CHANGED, Z21Throttle::replyBuffer, 2, false);
 }
 
 // This variant is called from the broadcast function when turnouts change
