@@ -160,6 +160,31 @@ bool WifiESP::setup(const char *SSid,
   // WiFi.setScanMethod(WIFI_ALL_CHANNEL_SCAN);
   // WiFi.setSortMethod(WIFI_CONNECT_AP_BY_SECURITY);
 
+  {
+    uint8_t baseMac[6];
+    esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
+    /*
+    // Make it start with 84:2B:BC
+    baseMac[0] = 0x84;
+    baseMac[1] = 0x2B;
+    baseMac[2] = 0xBC;
+    //84:2B:BC:02:D1:F9, SN 184825
+    baseMac[3] = 0x02;
+    baseMac[4] = 0xD1;
+    baseMac[5] = 0xF9;
+    */
+    //2C:FD:A1:C7:03:EF
+    baseMac[0] = 0x2c;
+    baseMac[1] = 0xfd;
+    baseMac[2] = 0xa1;
+    baseMac[3] = 0xc7;
+    baseMac[4] = 0x03;
+    baseMac[5] = 0xef;
+    if (esp_base_mac_addr_set(baseMac) != ESP_OK) {
+      DIAG(F("Failed to set MAC ADDR"));
+    }
+  }
+
   const char *yourNetwork = "Your network ";
   if (strncmp(yourNetwork, SSid, 13) == 0 || strncmp("", SSid, 13) == 0)
     haveSSID = false;
@@ -214,6 +239,7 @@ bool WifiESP::setup(const char *SSid,
     String strPass( (forceAP && havePassword) ? password : "PASS_");
     if (!forceAP) {
       String strMac = WiFi.macAddress();
+      DIAG(F("Got MAC %s"), strMac.c_str());
       strMac.remove(0,9);
       strMac.replace(":","");
       strMac.replace(":","");

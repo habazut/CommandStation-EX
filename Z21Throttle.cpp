@@ -253,7 +253,7 @@ void Z21Throttle::write(byte* inpData, int inLengthData) {
 	size = NetworkClientUDP::client.write(inpData, inLengthData);
 	NetworkClientUDP::client.endPacket();
 
-	if (Diag::Z21THROTTLEDATA && inpData[0] != 0x14 && inpData[2] != 0x84 ) DIAG(F("Z21 Throttle %d : %s SENT 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x"), clientid,
+	if (Diag::Z21THROTTLEDATA /*&& inpData[0] != 0x14 && inpData[2] != 0x84*/ ) DIAG(F("Z21 Throttle %d : %s SENT 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x"), clientid,
                           size == 0 ? "BINARY NOT" :"",
                           (inLengthData > 0)?inpData[0]:0,
                           (inLengthData > 1)?inpData[1]:0,
@@ -346,18 +346,18 @@ bool Z21Throttle::notify(unsigned int inHeader, unsigned int inXHeader, byte inD
 }
 
 void Z21Throttle::notifyStatus() {
-	Z21Throttle::replyBuffer[0] = 0;	// main current 1
+	Z21Throttle::replyBuffer[0] = 2; // main current 1      2mA
 	Z21Throttle::replyBuffer[1] = 0; // main current 2
-	Z21Throttle::replyBuffer[2] = 0; // prog current 1
+	Z21Throttle::replyBuffer[2] = 1; // prog current 1      1mA
 	Z21Throttle::replyBuffer[3] = 0; // prog current 2
-	Z21Throttle::replyBuffer[4] = 0; // filtered main current 1
+	Z21Throttle::replyBuffer[4] = 3; // filtered main current 1  3mA
 	Z21Throttle::replyBuffer[5] = 0; // filtered main current 2
-	Z21Throttle::replyBuffer[6] = 0; // Temperature 1
-	Z21Throttle::replyBuffer[7] = 0; // Temperature 2
-	Z21Throttle::replyBuffer[8] = 5; // Supply voltage 1
-	Z21Throttle::replyBuffer[9] = 0; // supply voltage 2
-	Z21Throttle::replyBuffer[10] = 16; // VCC voltage 1 
-	Z21Throttle::replyBuffer[11] = 0; // VCC voltage 2
+	Z21Throttle::replyBuffer[6] = 20; // Temperature 1       20C
+	Z21Throttle::replyBuffer[7] = 0;  // Temperature 2
+	Z21Throttle::replyBuffer[8] = 0xe4; // Supply voltage 1  16.1V
+	Z21Throttle::replyBuffer[9] = 0x3e; // supply voltage 2
+	Z21Throttle::replyBuffer[10] = 0x80; // VCC voltage 1    16.0V
+	Z21Throttle::replyBuffer[11] = 0x3e; // VCC voltage 2
 	Z21Throttle::replyBuffer[12] = 0b00000000;	// CentralState 
 	Z21Throttle::replyBuffer[13] = 0b00000000; // CentralStateEx
 	Z21Throttle::replyBuffer[14] = 0;
@@ -428,12 +428,15 @@ void Z21Throttle::notifyTrackInfo(bool state) {
   // 0x00 LAN_X_BC_TRACK_POWER_OFF 
   // 0x01 LAN_X_BC_TRACK_POWER_ON 
   Z21Throttle::replyBuffer[0] = state;
+  //                             0x61
   notify(HEADER_LAN_XPRESS_NET, LAN_X_HEADER_TRACK_INFO, Z21Throttle::replyBuffer, 1, false);
+
   Z21Throttle::replyBuffer[0] = LAN_X_DB0_STATUS_CHANGED;
   if (state)
     Z21Throttle::replyBuffer[1] = 0x00;
   else
     Z21Throttle::replyBuffer[1] = 0x02;
+  //                              0x62
   notify(HEADER_LAN_XPRESS_NET, LAN_X_HEADER_STATUS_CHANGED, Z21Throttle::replyBuffer, 2, false);
 }
 
@@ -506,12 +509,12 @@ void Z21Throttle::notifyLocoMode(byte inMSB, byte inLSB) {
 
 void Z21Throttle::notifyFirmwareVersion() {
 	Z21Throttle::replyBuffer[0] = 0x01;	// Version major in BCD
-	Z21Throttle::replyBuffer[1] = 0x23;	// Version minor in BCD
+	Z21Throttle::replyBuffer[1] = 0x43;	// Version minor in BCD
 	notify(HEADER_LAN_XPRESS_NET, LAN_X_HEADER_FIRMWARE_VERSION, 0x0A, Z21Throttle::replyBuffer, 2, false);
 }
 
 void Z21Throttle::notifyHWInfo() {
-	Z21Throttle::replyBuffer[0] = 0x00;	// Hardware type in BCD on int32
+	Z21Throttle::replyBuffer[0] = 0x01;	// Hardware type in BCD on int32
 	Z21Throttle::replyBuffer[1] = 0x02;	// Hardware type in BCD on int32
 	Z21Throttle::replyBuffer[2] = 0x00;	// Hardware type in BCD on int32
 	Z21Throttle::replyBuffer[3] = 0x00;	// Hardware type in BCD on int32
@@ -796,9 +799,14 @@ bool Z21Throttle::parse(byte *networkPacket, int len) {
 	switch (DB[0]) {
 	case LAN_X_DB0_GET_VERSION:
 	  if (Diag::Z21THROTTLEVERBOSE) DIAG(F("%d GET_VERSION"), this->clientid);
+	  { byte buf[2];
+	    buf[0] = 0x36; // V3.6 used Z21 V1.24 to V1.41 ; V4.0 used from Z21 FW1.42
+	    buf[1] = 0x12; // Z21
+	    notify(HEADER_LAN_XPRESS_NET, 0x63, 0x21, buf, 2, false);
+	  }
 	  break;
 	case LAN_X_DB0_GET_STATUS:
-	  if (false && Diag::Z21THROTTLEVERBOSE) DIAG(F("%d GET_STATUS  "), this->clientid);
+	  if (Diag::Z21THROTTLEVERBOSE) DIAG(F("%d GET_STATUS  "), this->clientid);
 	  notifyStatus();
 	  done = true;
 	  break;
@@ -973,6 +981,7 @@ bool Z21Throttle::parse(byte *networkPacket, int len) {
     case HEADER_LAN_SYSTEMSTATE_GETDATA:
       if (Diag::Z21THROTTLEVERBOSE) DIAG(F("%d SYSTEMSTATE GETDATA"), this->clientid);
       notifyStatus();	// big endian here, but resend the same as received, so no problem.
+      Z21Throttle::notifyTrackInfo(1); // XXXXXXXX
       done = true;
       break;
     case HEADER_LAN_LOCONET_DETECTOR:
@@ -993,7 +1002,22 @@ bool Z21Throttle::parse(byte *networkPacket, int len) {
     }
     break;
     case HEADER_LAN_GET_SERIAL_NUMBER:
+      // 106021 black Z21b/0
+      // 130039 white z21/1
+      // 150    white z21start/3
       // XXX this has been seen, return dummy number
+    {
+      uint8_t baseMac[6];
+      byte buf[4];
+      esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
+      buf[0] = 0xf9;//baseMac[5];
+      buf[1] = 0xd1;//baseMac[4];
+      buf[2] = 0x02;//baseMac[3];
+      buf[3] = 0;
+      notify(HEADER_LAN_GET_SERIAL_NUMBER, buf, 4, false);
+    }
+    done = true;
+    break;
     case HEADER_LAN_GET_BROADCASTFLAGS:
     case HEADER_LAN_GET_TURNOUTMODE:
     case HEADER_LAN_SET_TURNOUTMODE:
