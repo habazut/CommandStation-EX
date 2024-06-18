@@ -91,6 +91,29 @@ int DCCTimer::freeMemory() {
 #define ADC_INPUT_MAX_VALUE 4095 // 12 bit ADC
 #define pinToADC1Channel(X) (adc1_channel_t)(((X) > 35) ? (X)-36 : (X)-28)
 
+#include "esp_timer.h"
+#include <xtensa/hal.h> 
+
+void esp32DelayTest(int del) {
+  uint32_t fcpumhz=F_CPU/1000000U;
+  DIAG(F("%sCompiled CPUMhz=%d"), fcpumhz != 240 ? "Warning: " : "", fcpumhz);
+  fcpumhz = getCpuFrequencyMhz();
+  DIAG(F("%sReported CPUMhz=%d"), fcpumhz != 240 ? "Warning: " : "", fcpumhz);
+  uint64_t esphatimerstart = esp_timer_get_time();
+  uint32_t mtimerstart = micros();
+  uint32_t xtickstart = xthal_get_ccount();
+  delay(del);
+  uint32_t esphatimerdiff = (uint32_t)(esp_timer_get_time()-esphatimerstart);
+  if (esphatimerdiff < del * 999 || esphatimerdiff > del * 1001 )
+    DIAG(F("esp_timer_get_time diff too big: %u to %u"), del*1000, esphatimerdiff);
+  uint32_t mtimerdiff = micros()-mtimerstart;
+  if (mtimerdiff < del * 999|| mtimerdiff > del * 1001 )
+    DIAG(F("micros diff too big: %u to %u"), del*1000, mtimerdiff);
+  uint32_t xtickdiff = (xthal_get_ccount()-xtickstart)/fcpumhz;
+  if (xtickdiff < del * 999 || xtickdiff > del * 1001 )
+    DIAG(F("xthal_get_ccount diff too big: %u to %u"), del*1000, xtickdiff);
+}
+
 int IRAM_ATTR local_adc1_get_raw(int channel) {
   uint16_t adc_value;
   SENS.sar_meas_start1.sar1_en_pad = (1 << channel); // only one channel is selected

@@ -69,6 +69,7 @@
 // remember trailing '\0', sizeof("") == 1.
 #define PASSWDCHECK(S) static_assert(sizeof(S) == 1 || sizeof(S) > 8, "Password shorter than 8 chars")
 
+extern void esp32DelayTest(int);
 void setup()
 {
   // The main sketch has responsibilities during setup()
@@ -110,6 +111,7 @@ void setup()
 #endif // WIFI_ON
 #else
   // ESP32 needs wifi on always
+  esp32DelayTest(1000);
   PASSWDCHECK(WIFI_PASSWORD); // compile time check
   WifiESP::setup(WIFI_SSID, WIFI_PASSWORD, WIFI_HOSTNAME, IP_PORT, WIFI_CHANNEL, WIFI_FORCE_AP);
 #endif // ARDUINO_ARCH_ESP32
