@@ -59,7 +59,7 @@ void DCCTimer::begin(INTERRUPT_CALLBACK callback) {
     interrupts();
   }
 
-
+byte offset = 0;
 void DCCTimer::startRailcomTimer(byte brakePin) {
   /* The Railcom timer is started in such a way that it 
      - First triggers 28uS after the last TIMER1 tick. 
@@ -80,22 +80,26 @@ void DCCTimer::startRailcomTimer(byte brakePin) {
   const int cutoutDuration = 430; // Desired interval in microseconds
   
   // Set up Timer2 for CTC mode (Clear Timer on Compare Match)
+  OCR2B = 0;
   TCCR2A = 0; // Clear Timer2 control register A
   TCCR2B = 0; // Clear Timer2 control register B
-  TCNT2 = 0;  // Initialize Timer2 counter value to 0
-   // Configure Phase and Frequency Correct PWM mode
-   TCCR2A =  (1 << COM2B1); // enable pwm on pin 9
-   TCCR2A |= (1 << WGM20);
+  //TCNT2 = 0;  // Initialize Timer2 counter value to 0
+  TCNT2=148-14;
+  //TCCR2A |= (1 << WGM20);    // Configure Phase and Frequency Correct PWM mode
+  TCCR2A |=  (1 << WGM20) | (1 <<WGM22);    // Phase correct 5
+  TCCR2A |=  (1 << COM2B1); // enable pwm on pin 9
   
    
   // Set Timer 2 prescaler to 32
   TCCR2B = (1 << CS21) | (1 << CS20); // 32 prescaler
 
   // Set the compare match value for desired interval
-  OCR2A = (F_CPU / 1000000) * cutoutDuration / 64 - 1;
+  // OCR2A = (F_CPU / 1000000) * cutoutDuration / 64 - 1;
+  OCR2A = 255;
 
   // Calculate the compare match value for desired duty cycle
-  OCR2B = OCR2A+1;  // set duty cycle to 100%= OCR2A)
+  //OCR2B = OCR2A+1;  // set duty cycle to 100%= OCR2A)
+  OCR2B = 148;
 
   // Enable Timer2 output on pin 9 (OC2B)
   DDRB |= (1 << DDB1);
@@ -111,12 +115,16 @@ void DCCTimer::startRailcomTimer(byte brakePin) {
   // CHris's NOTE: 
   // I dont kniow quite how this calculation works out but
   // it does seems to get a good answer. 
-
-  TCNT2=193 + (ICR1 - TCNT1)/8;
+  //TCNT2=193 + (ICR1 - TCNT1)/8;
+//
+  //TCNT2 = 255 - ( (58+58+28 /* - TCNT1/16*/ )/2);
 }
 
 void DCCTimer::ackRailcomTimer() {
-  OCR2B= 0x00;  // brake pin pwm duty cycle 0 at next tick
+  OCR2B= 0;  // brake pin pwm duty cycle 0 at next tick
+  //OCR2A= 20;
+  //TCCR2A |=  (1 << COM2B0); // invert
+  //TCCR2A &=  ~(1 << COM2B1); // remove pin 9
 }
 
 

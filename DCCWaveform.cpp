@@ -72,6 +72,10 @@ void DCCWaveform::loop() {
 #pragma GCC push_options
 #pragma GCC optimize ("-O3")
 void DCCWaveform::interruptHandler() {
+  if (mainTrack.cutoutNextTime) {
+    mainTrack.cutoutNextTime=false;
+    DCCTimer::startRailcomTimer(9);
+  }
   // call the timer edge sensitive actions for progtrack and maintrack
   // member functions would be cleaner but have more overhead
   byte sigMain=signalTransform[mainTrack.state];
@@ -140,6 +144,7 @@ void DCCWaveform::interrupt2() {
   //        or WAVE_HIGH_0 for a 0 bit.
   if (remainingPreambles > 0 ) {
     state=WAVE_MID_1;  // switch state to trigger LOW on next interrupt
+    cutoutNextTime= isMainTrack && railcomActive && remainingPreambles == (requiredPreambles-1);
     remainingPreambles--;
   
     // As we get to the end of the preambles, open the reminder window.
@@ -147,7 +152,7 @@ void DCCWaveform::interrupt2() {
     // that the reminder doesn't block a more urgent packet. 
     reminderWindowOpen=transmitRepeats==0 && remainingPreambles<4 && remainingPreambles>1;
     if (remainingPreambles==1) promotePendingPacket();
-    else if (remainingPreambles==10 && isMainTrack && railcomActive) DCCTimer::ackRailcomTimer();
+    else if (remainingPreambles==requiredPreambles-6 && isMainTrack && railcomActive) DCCTimer::ackRailcomTimer();
     // Update free memory diagnostic as we don't have anything else to do this time.
     // Allow for checkAck and its called functions using 22 bytes more.
     else DCCTimer::updateMinimumFreeMemoryISR(22); 
@@ -172,11 +177,6 @@ void DCCWaveform::interrupt2() {
       // preamble for next packet will start...
       remainingPreambles = requiredPreambles;
       
-      // set the railcom coundown to trigger half way 
-      // through the first preamble bit.
-      // Note.. we are still sending the last packet bit
-      //    and we then have to allow for the packet end bit
-      if (isMainTrack && railcomActive) DCCTimer::startRailcomTimer(9);
       }
   }  
 }
