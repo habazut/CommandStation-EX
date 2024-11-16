@@ -40,5 +40,6 @@ private:
   char* _serviceName;
   char* _serviceProto;
   int _servicePort;
+  char *_test;
 };
 #endif //DO_MDNS

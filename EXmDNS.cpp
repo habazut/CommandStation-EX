@@ -22,6 +22,7 @@
 #include "EthernetInterface.h"
 #ifdef DO_MDNS
 #include "EXmDNS.h"
+#include "DIAG.h"
 
 // fixed values for mDNS
 static IPAddress mdnsMulticastIPAddr = IPAddress(224, 0, 0, 251);
@@ -75,19 +76,26 @@ int MDNS::begin(const IPAddress& ip, char* name) {
   //  delay(100);
   
   _ipAddress = ip;
-  _name = (char *)malloc(strlen(name +2));
+  _name = (char *)malloc(strlen(name)+2);
   byte n;
   for(n = 0; n<strlen(name); n++)
     _name[n+1] = name[n];
   _name[n+1] = '\0';
   _name[0] = '.';
   dotToLen(_name, NULL);
+  DIAG(F("_name:%s"), _name);
+/*  _test = (char *)malloc(TSIZE);
+  for(byte n = 0 ; n<TSIZE; n++)
+    _test[n] = 'b';
+  _test[TSIZE-1] = '\0';
+  DIAG(F("_test:%s"), _test);
+*/
   return _udp->beginMulticast(mdnsMulticastIPAddr, MDNS_SERVER_PORT);
 }
 
 int MDNS::addServiceRecord(const char* name, uint16_t port, MDNSServiceProtocol_t proto) {
   // we ignore proto, assume TCP
-  _serviceName = (char *)malloc(strlen(name +2));
+  _serviceName = (char *)malloc(strlen(name)+2);
   byte n;
   for(n = 0; n<strlen(name); n++)
     _serviceName[n+1] = name[n];
@@ -96,6 +104,7 @@ int MDNS::addServiceRecord(const char* name, uint16_t port, MDNSServiceProtocol_
   _serviceProto = NULL; //to be filled in
   dotToLen(_serviceName, &_serviceProto);
   _servicePort = port;
+  DIAG(F("_serviceName:%s"), _serviceName);
   return 1;
 }
 
@@ -124,6 +133,9 @@ void MDNS::run() {
   if (!(now - lastrun > BROADCASTTIME * 1000UL)) {
     return;
   }
+  DIAG(F("_name:%s"), _name);
+//  DIAG(F("_test:%s"), _test);
+  DIAG(F("_serviceName:%s"), _serviceName);
   lastrun = now;
   DNSHeader_t dnsHeader = { 0 };
 

@@ -40,10 +40,10 @@
 //#define TCP_DEBUG                       LWIP_DBG_ON
 
 // IMPORTANT CHANGE THE FIRST ONE
-#undef  MEM_LIBC_MALLOC
-#define MEM_LIBC_MALLOC         1       // critical, fixes heap trashing
-#undef  MEMP_MEM_MALLOC
-#define MEMP_MEM_MALLOC         1       // uses malloc which means no pools which means slower but not mean 32KB up front
+//#undef  MEM_LIBC_MALLOC
+//#define MEM_LIBC_MALLOC         1       // critical, fixes heap trashing
+//#undef  MEMP_MEM_MALLOC
+//#define MEMP_MEM_MALLOC         1       // uses malloc which means no pools which means slower but not mean 32KB up front
 
 #undef  MEMP_NUM_TCP_PCB
 #define MEMP_NUM_TCP_PCB        MAX_NUM_TCP_CLIENTS+1 // one extra so we can reject number N+1 from our code

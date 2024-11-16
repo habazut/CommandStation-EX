@@ -356,3 +356,16 @@ The configuration file for DCC-EX Command Station
 //#define STARTUP_DELAY 5000    // up to 20sec. CS delay
 //
 /////////////////////////////////////////////////////////////////////////////////////
+
+// added for bug report
+#undef MOTOR_SHIELD_TYPE
+#define MOTOR_SHIELD_TYPE NO_SHIELD
+#ifdef ARDUINO_NUCLEO_F429ZI
+#undef ENABLE_ETHERNET
+#define ENABLE_ETHERNET true
+#undef ENABLE_WIFI
+#define ENABLE_WIFI false
+#endif
+#define MAX_NUM_TCP_CLIENTS 20
+#undef WIFI_HOSTNAME
+#define WIFI_HOSTNAME "stm32dccex"
