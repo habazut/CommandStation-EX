@@ -7,6 +7,17 @@
 class Sniffer {
 public:
   Sniffer(byte snifferpin);
+  void IRAM_ATTR processInterrupt(int32_t capticks, bool posedge);
+  inline int32_t getTicks() {
+    noInterrupts();
+    int32_t i = diffticks;
+    interrupts();
+    return i;
+  };
 private:
-}
+  int64_t bitfield = 0;
+  int32_t diffticks;
+  int32_t lastticks;
+  bool lastedge;
+};
 #endif
