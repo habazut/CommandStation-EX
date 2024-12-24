@@ -15,7 +15,7 @@ public:
     return i;
   };
 private:
-  int64_t bitfield = 0;
+  uint64_t bitfield = 0;
   int32_t diffticks;
   int32_t lastticks;
   bool lastedge;
