@@ -168,8 +168,15 @@ void loopdiag(unsigned long timeout)
   if (timeout != 0) {
     unsigned long diff = now - lasttimestamp;
     if (diff > timeout) {
-      if (DCCSniffer)
-	DIAG(F("ticks=%L"), DCCSniffer->getTicks());
+      if (DCCSniffer){
+	uint64_t val = DCCSniffer->getDebug();
+	int n = 64;
+	Serial.print("< ");
+	while (n--) {
+	  Serial.print(val&(1ULL<<n)?"1":"0");
+	}
+	Serial.println(" >");
+      }
       lasttimestamp = millis();
       return;
     }
@@ -179,7 +186,7 @@ void loopdiag(unsigned long timeout)
 void loop()
 {
   // Some debug for sniffer code
-  //  loopdiag(937); // Do not use a value that does divide even in 80Mhz ticks
+  loopdiag(937); // Do not use a value that does divide even in 80Mhz ticks
   digitalWrite(2,LOW);
 
   // The main sketch has responsibilities during loop()

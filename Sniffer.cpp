@@ -70,8 +70,13 @@ Sniffer::Sniffer(byte snifferpin) {
 #define DCC_TOO_SHORT 4000L // 4000 ticks are 50usec
 #define DCC_ONE_LIMIT 6400L // 6400 ticks are 80usec
 
+volatile int fakecounter = 0;
+
 void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
-  bool bit = 0;
+  if (fakecounter >= 64)
+    fakecounter = 0;
+  fakecounter++;
+  byte bit = 0;
   diffticks = capticks - lastticks;
   if (lastedge != posedge) {
     if (diffticks < DCC_TOO_SHORT) {
@@ -81,11 +86,16 @@ void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
       bit = 1;
     } else {
       bit = 0;
-    }
+    }/*
+    if (fakecounter == 7 || fakecounter == 34 ||  fakecounter == 62 || fakecounter == 63) {
+      bit = 0;
+    } else {
+      bit = 1;
+      }*/
     lastticks = capticks;
     lastedge = posedge;
-    bitfield = bitfield << 1;
-    bitfield = bitfield + bit;
+    bitfield = bitfield << (uint64_t)1;
+    bitfield = bitfield + (uint64_t)bit;
 
     // now the halfbit is in the bitfield. Analyze...
     
@@ -94,7 +104,6 @@ void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
       // and detects a preamble if
       // 22 are ONE and 2 are ZERO which is a
       // preabmle of 11 ONES and one ZERO
-      digitalWrite(2,HIGH);
       if (inpacket) {
 	// if we are already inpacket here we
 	// got a preamble in the middle of a
@@ -104,13 +113,17 @@ void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
       currentbyte = 0;
       dcclen = 0;
       inpacket = true;
-      halfbitcounter = 17; // count 18 steps from 17 to 0 and then look at the byte
+      halfbitcounter = 18; // count 18 steps from 17 to 0 and then look at the byte
+      digitalWrite(2,HIGH);
+      return;
     }
     if (inpacket) {
-      if (halfbitcounter--) {
+      halfbitcounter--;
+      if (halfbitcounter) {
 	return; // wait until we have full byte
       } else {
 	// have reached end of byte
+	//if (currentbyte == 2) debugfield = bitfield;
 	byte twohalfbits = bitfield & 0x03;
 	switch (twohalfbits) {
 	case 0x01:
@@ -132,10 +145,12 @@ void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
 	  }
 	  if (twohalfbits == 0x03) {
 	    inpacket = false;
-	    dcclen = currentbyte;
+	    dcclen = currentbyte+1;
+	    debugfield = bitfield;
 	  }
 	  break;
 	}
+	halfbitcounter = 18;
 	currentbyte++; // everything done for this end of byte
       }
     }

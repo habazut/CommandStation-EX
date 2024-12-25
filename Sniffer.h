@@ -14,8 +14,15 @@ public:
     interrupts();
     return i;
   };
+  inline int64_t getDebug() {
+    noInterrupts();
+    int64_t i = debugfield;
+    interrupts();
+    return i;
+  };
 private:
   uint64_t bitfield = 0;
+  uint64_t debugfield = 0;
   int32_t diffticks;
   int32_t lastticks;
   bool lastedge;
