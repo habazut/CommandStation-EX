@@ -4,11 +4,13 @@
 //extern Sniffer *DCCSniffer;
 
 static void packeterror() {
+  digitalWrite(2,HIGH);
   // turn or error led or something
 }
 
 static bool halfbits2byte(uint16_t b, byte *dccbyte) {
   byte n = 8;
+  //*dccbyte = 17;
   while(n--) {
     // n loops from 7 to 0
     switch (b & 0x03) {
@@ -114,7 +116,6 @@ void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
       dcclen = 0;
       inpacket = true;
       halfbitcounter = 18; // count 18 steps from 17 to 0 and then look at the byte
-      digitalWrite(2,HIGH);
       return;
     }
     if (inpacket) {
@@ -136,22 +137,27 @@ void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
 	case 0x00:
 	case 0x03:
 	  // byte end
-	  uint16_t b = (halfbitcounter & 0x3FFFF)>>2; // take 18 halfbits and use 16 of them
+	  uint16_t b = (bitfield & 0x3FFFF)>>2; // take 18 halfbits and use 16 of them
 	  if (!halfbits2byte(b, dccbytes + currentbyte)) {
 	    // broken halfbits
 	    inpacket = false;
 	    packeterror();
 	    return;
 	  }
-	  if (twohalfbits == 0x03) {
+	  if (twohalfbits == 0x03) { // end of packet marker
 	    inpacket = false;
 	    dcclen = currentbyte+1;
 	    debugfield = bitfield;
+	    return;
 	  }
 	  break;
 	}
 	halfbitcounter = 18;
 	currentbyte++; // everything done for this end of byte
+	if (currentbyte >= MAXDCCPACKETLEN) {
+	  inpacket = false; // this is an error because we should have retured above
+	  packeterror();    // when endof packet marker was active
+	}
       }
     }
   }

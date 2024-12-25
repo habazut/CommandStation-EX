@@ -176,6 +176,7 @@ void loopdiag(unsigned long timeout)
 	  Serial.print(val&(1ULL<<n)?"1":"0");
 	}
 	Serial.println(" >");
+	(DCCSniffer->fetchPacket()).print(Serial);
       }
       lasttimestamp = millis();
       return;

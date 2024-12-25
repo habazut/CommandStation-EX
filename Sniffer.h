@@ -4,6 +4,9 @@
 #include "soc/mcpwm_struct.h"
 #include "soc/mcpwm_reg.h"
 
+#define MAXDCCPACKETLEN 8
+#include "DCCPacket.h"
+
 class Sniffer {
 public:
   Sniffer(byte snifferpin);
@@ -20,6 +23,12 @@ public:
     interrupts();
     return i;
   };
+  inline DCCPacket fetchPacket() {
+    noInterrupts();
+    DCCPacket d(dcclen, dccbytes);
+    interrupts();
+    return d;
+  };
 private:
   uint64_t bitfield = 0;
   uint64_t debugfield = 0;
@@ -27,7 +36,7 @@ private:
   int32_t lastticks;
   bool lastedge;
   byte currentbyte = 0;
-  byte dccbytes[16];
+  byte dccbytes[MAXDCCPACKETLEN];
   byte dcclen = 0;
   bool inpacket = false;
   byte halfbitcounter = 0;
