@@ -3,6 +3,33 @@
 #include "DIAG.h"
 //extern Sniffer *DCCSniffer;
 
+static void packeterror() {
+  // turn or error led or something
+}
+
+static bool halfbits2byte(uint16_t b, byte *dccbyte) {
+  byte n = 8;
+  while(n--) {
+    // n loops from 7 to 0
+    switch (b & 0x03) {
+    case 0x01:
+    case 0x02:
+      // broken bits
+      packeterror();
+      return false;
+      break;
+    case 0x00:
+      bitClear(*dccbyte, n);
+      break;
+    case 0x03:
+      bitSet(*dccbyte, n);
+      break;
+    }
+    b = b>>2;
+  }
+  return true;
+}
+
 static bool IRAM_ATTR cap_ISR_cb(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_channel, const cap_event_data_t *edata,void *user_data) {
   if (edata->cap_edge == MCPWM_BOTH_EDGE) {
     // should not happen at all
@@ -59,15 +86,60 @@ void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
     lastedge = posedge;
     bitfield = bitfield << 1;
     bitfield = bitfield + bit;
+
+    // now the halfbit is in the bitfield. Analyze...
+    
     if ((bitfield & 0xFFFFFF) == 0xFFFFFC){
-      // This detects the 24 last halfbits
-      // which 22 are ONE and 2 are ZERO
-      // so preabmle of 11 ONES and one ZERO
+      // This looks at the 24 last halfbits
+      // and detects a preamble if
+      // 22 are ONE and 2 are ZERO which is a
+      // preabmle of 11 ONES and one ZERO
       digitalWrite(2,HIGH);
+      if (inpacket) {
+	// if we are already inpacket here we
+	// got a preamble in the middle of a
+	// packet
+	packeterror();
+      }
+      currentbyte = 0;
+      dcclen = 0;
+      inpacket = true;
+      halfbitcounter = 17; // count 18 steps from 17 to 0 and then look at the byte
+    }
+    if (inpacket) {
+      if (halfbitcounter--) {
+	return; // wait until we have full byte
+      } else {
+	// have reached end of byte
+	byte twohalfbits = bitfield & 0x03;
+	switch (twohalfbits) {
+	case 0x01:
+	case 0x02:
+	  // broken bits
+	  inpacket = false;
+	  packeterror();
+	  return;
+	  break;
+	case 0x00:
+	case 0x03:
+	  // byte end
+	  uint16_t b = (halfbitcounter & 0x3FFFF)>>2; // take 18 halfbits and use 16 of them
+	  if (!halfbits2byte(b, dccbytes + currentbyte)) {
+	    // broken halfbits
+	    inpacket = false;
+	    packeterror();
+	    return;
+	  }
+	  if (twohalfbits == 0x03) {
+	    inpacket = false;
+	    dcclen = currentbyte;
+	  }
+	  break;
+	}
+	currentbyte++; // everything done for this end of byte
+      }
     }
   }
-//  if (ticks > 800000000) //10sec
-//    DIAG(F("tick"));
 }
 
 /*

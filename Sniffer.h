@@ -19,5 +19,10 @@ private:
   int32_t diffticks;
   int32_t lastticks;
   bool lastedge;
+  byte currentbyte = 0;
+  byte dccbytes[16];
+  byte dcclen = 0;
+  bool inpacket = false;
+  byte halfbitcounter = 0;
 };
 #endif
