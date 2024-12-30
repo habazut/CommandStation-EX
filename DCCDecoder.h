@@ -1,25 +1,36 @@
 #include <Arduino.h>
 #include "DCCPacket.h"
 #include "LocoTable.h"
+#include "DIAG.h"
 
 class DCCDecoder {
 public:
   DCCDecoder() {};
-  bool parse(DCCPacket p);
+  bool parse(DCCPacket &p);
 private:
 };
 
 
-bool DCCDecoder::parse(DCCPacket p) {
+bool DCCDecoder::parse(DCCPacket &p) {
   byte *d = p.data();
   byte *instr = 0;
   uint16_t addr;
   bool locoInfoChanged = 0;
   byte decoderType = 0; // use 0 as none
+
   if (d[0] ==  0B11111111) {  // Idle packet
     return false;
   }
-  if (bitRead(d[0],7) == 0) { // bit7 == 0 => loco short addr
+  // CRC verification here
+
+/*
+  Serial.print("< ");
+  for(int n=0; n<8; n++) {
+    Serial.print(d[0]&(1<<n)?"1":"0");
+  }
+  Serial.println(" >");
+*/
+  if ((d[0] & 0B10000000) == 0) { // bit7 == 0 => loco short addr
     decoderType = 1;
     instr = d+1;
     addr = d[0];
@@ -35,6 +46,7 @@ bool DCCDecoder::parse(DCCPacket p) {
     case 0x20: // 001x-xxxx Extended commands
       if (instr[0] == 0B00111111) { // 128 speed steps
 	if ((locoInfoChanged = LocoTable::updateLoco(addr, instr[1])) == true) {
+	  //DIAG(F("UPDATE"));
 	  // send speed change to DCCEX here
 	}
       }
@@ -55,5 +67,5 @@ bool DCCDecoder::parse(DCCPacket p) {
       break;
     }
   }
-  return false;
+  return locoInfoChanged;
 }

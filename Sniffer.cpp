@@ -9,9 +9,16 @@ static void packeterror() {
 }
 
 static bool halfbits2byte(uint16_t b, byte *dccbyte) {
-  byte n = 8;
-  //*dccbyte = 17;
-  while(n--) {
+/*
+  if (b!=0 && b!=0xFFFF) {
+    Serial.print("[ ");
+    for(int n=0; n<16; n++) {
+      Serial.print(b&(1<<n)?"1":"0");
+    }
+    Serial.println(" ]");
+  }
+*/
+  for(byte n=0; n<8; n++) {
     // n loops from 7 to 0
     switch (b & 0x03) {
     case 0x01:

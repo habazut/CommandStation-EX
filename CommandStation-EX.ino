@@ -179,7 +179,9 @@ void loopdiag(unsigned long timeout)
 	  Serial.print(val&(1ULL<<n)?"1":"0");
 	}
 	Serial.println(" >");
+/*
 	(dccSniffer->fetchPacket()).print(Serial);
+*/
       }
       lasttimestamp = millis();
       return;
@@ -190,11 +192,14 @@ void loopdiag(unsigned long timeout)
 void loop()
 {
   // Some debug for sniffer code
-  loopdiag(937); // Do not use a value that does divide even in 80Mhz ticks
-  if (dccSniffer) {
-    DCCPacket d = dccSniffer->fetchPacket();
-    if (dccDecoder && d.len())
-      dccDecoder->parse(d);
+  //loopdiag(937); // Do not use a value that does divide even in 80Mhz ticks
+  if (dccSniffer && dccDecoder) {
+    DCCPacket p = dccSniffer->fetchPacket();
+    if (p.len() != 0) {
+      if (dccDecoder->parse(p)) {
+	p.print(Serial);
+      }
+    }
   }
   digitalWrite(2,LOW);
 
