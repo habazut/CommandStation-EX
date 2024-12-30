@@ -26,6 +26,7 @@ public:
   inline DCCPacket fetchPacket() {
     noInterrupts();
     DCCPacket d(dcclen, dccbytes);
+    dcclen = 0;
     interrupts();
     return d;
   };
