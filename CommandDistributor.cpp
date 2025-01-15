@@ -31,6 +31,7 @@
 #include "DCC.h"
 #include "TrackManager.h"
 #include "StringFormatter.h"
+#include "Websockets.h"
 
 // variables to hold clock time
 int16_t lastclocktime;
@@ -72,22 +73,39 @@ void  CommandDistributor::parse(byte clientId,byte * buffer, RingStream * stream
   // client is using the DCC++ protocol where all commands start
   // with '<'
   if (clients[clientId] == NONE_TYPE) {
+    auto websock=Websockets::checkConnectionString(clientId,buffer,stream);
+    if (websock) {
+      clients[clientId]=WEBSOCK_CONNECTING_TYPE;
+      return;
+    }
     if (buffer[0] == '<')
       clients[clientId]=COMMAND_TYPE;
     else
       clients[clientId]=WITHROTTLE_TYPE;
   }
 
+  // after first inbound transmission the websocket is connected
+  if (clients[clientId]==WEBSOCK_CONNECTING_TYPE)
+      clients[clientId]=WEBSOCKET_TYPE;
+      
+      
   // mark buffer that is sent to parser
-  ring->mark(clientId);
-
   // When type is known, send the string
   // to the right parser
   if (clients[clientId] == COMMAND_TYPE) {
+    ring->mark(clientId);
     DCCEXParser::parse(stream, buffer, ring);
   } else if (clients[clientId] == WITHROTTLE_TYPE) {
+    ring->mark(clientId);
     WiThrottle::getThrottle(clientId)->parse(ring, buffer);
   }
+  else if (clients[clientId] == WEBSOCKET_TYPE) {
+    buffer=Websockets::unmask(clientId,ring, buffer);
+    if (!buffer) return; // unmask may have handled it alrerday (ping/pong)
+    // mark ring with client flagged as websocket for transmission later
+    ring->mark(clientId | Websockets::WEBSOCK_CLIENT_MARKER);
+    DCCEXParser::parse(stream, buffer, ring);
+    }
 
   if (ring->peekTargetMark()!=RingStream::NO_CLIENT) {
     // The commit call will either write the length bytes
@@ -191,7 +209,9 @@ void CommandDistributor::setClockTime(int16_t clocktime, int8_t clockrate, byte 
         // CAH. DIAG removed because LCD does it anyway. 
         LCD(6,F("Clk Time:%d Sp %d"), clocktime, clockrate);
         // look for an event for this time
+#ifdef EXRAIL_ACTIVE        
         RMFT2::clockEvent(clocktime,1);
+#endif        
         // Now tell everyone else what the time is.
         CommandDistributor::broadcastClockTime(clocktime, clockrate);
         lastclocktime = clocktime;
