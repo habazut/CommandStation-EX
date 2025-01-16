@@ -28,6 +28,9 @@
      CommandDistributor pass it to this code 
      checkConnectionString() to check for an HTTP
      protocol GET requesting a change to websocket protocol.
+     [Note that the WifiInboundHandler has a shortcut to detecting this so that
+      it does not need to use up 500+ bytes of RAM just to get at the one parameter that
+      actually means something.]
      If that is found, the relevant answer is generated and queued and
      the CommandDistributor marks this client as a websocket client awaiting connection.
      Once the outbound handshake has completed, the CommandDistributor promotes the client

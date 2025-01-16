@@ -45,6 +45,7 @@ template<typename... Targs> void CommandDistributor::broadcastReply(clientType t
   broadcastBufferWriter->flush();
   StringFormatter::send(broadcastBufferWriter, msg...);
   broadcastToClients(type);
+  if (type==COMMAND_TYPE) broadcastToClients(WEBSOCKET_TYPE);
 }
 #else
 // on a single USB connection config, write direct to Serial and ignore flush/shove
@@ -76,6 +77,7 @@ void  CommandDistributor::parse(byte clientId,byte * buffer, RingStream * stream
     auto websock=Websockets::checkConnectionString(clientId,buffer,stream);
     if (websock) {
       clients[clientId]=WEBSOCK_CONNECTING_TYPE;
+      // websockets will have replied already 
       return;
     }
     if (buffer[0] == '<')
@@ -149,7 +151,7 @@ void CommandDistributor::broadcastToClients(clientType type) {
     for (byte clientId=0; clientId<sizeof(clients); clientId++) {
       if (clients[clientId]==type)  {
 	//DIAG(F("CD mark client %d"), clientId);
-	ring->mark(clientId);
+	ring->mark(clientId | (type==WEBSOCKET_TYPE? Websockets::WEBSOCK_CLIENT_MARKER : 0));
 	ring->print(broadcastBufferWriter->getString());
 	//DIAG(F("CD commit client %d"), clientId);
 	ring->commit();
