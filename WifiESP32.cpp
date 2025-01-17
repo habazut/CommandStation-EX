@@ -392,21 +392,19 @@ void WifiESP::loop() {
       int count=outboundRing->count();
       auto wsHeaderLen=useWebsocket? Websockets::getOutboundHeaderSize(count) : 0;
       {
-        
-	byte buffer[wsHeaderLen+count+1]; // one extra for '\0'
-  if (useWebsocket) Websockets::fillOutboundHeader(count, buffer);
-	for(int i=0;i<count;i++) {
-	  int c = outboundRing->read();
-	  if (c >= 0) // Panic check, should never be false
-      // websocket implementations at browser end can barf at \b 
-      if (websocket && (cout=='\n')) cout='\r'; 
-	    buffer[i+wsHeaderLen] = (char)c;
-	  else {
-	    DIAG(F("Ringread fail at %d"),i);
-	    break;
-	  }
-	}
-	// buffer filled, end with '\0' so we can use it as C string
+        byte buffer[wsHeaderLen + count + 1];  // one extra for '\0'
+        if (useWebsocket) Websockets::fillOutboundHeader(count, buffer);
+        for (int i = 0; i < count; i++) {
+          int c = outboundRing->read();
+          if (!c) {
+            DIAG(F("Ringread fail at %d"), i);
+            break;
+          }
+          // websocket implementations at browser end can barf at \n
+          if (useWebsocket && (c == '\n')) c = '\r';
+          buffer[i + wsHeaderLen] = (char)c;
+        }
+        // buffer filled, end with '\0' so we can use it as C string
 	buffer[wsHeaderLen+count]='\0';
 	if((unsigned int)clientId <= clients.size() && clients[clientId].active(clientId)) {
 	  if (Diag::CMD || Diag::WITHROTTLE)
