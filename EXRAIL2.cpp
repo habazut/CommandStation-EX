@@ -65,6 +65,11 @@
 
 // Statics 
 const int16_t LOCO_ID_WAITING=-99; // waiting for loco id from prog track
+#ifdef ARDUINO_ARCH_AVR
+const long POLL_DELAY=50;
+#else
+const long POLL_DELAY=10;
+#endif
 int16_t RMFT2::progtrackLocoId;  // used for callback when detecting a loco on prog track
 bool RMFT2::diag=false;      // <D EXRAIL ON>  
 RMFT2 * RMFT2::loopTask=NULL; // loopTask contains the address of ONE of the tasks in a ring.
@@ -614,19 +619,19 @@ void RMFT2::loop2() {
   case OPCODE_AT:
     blinkState=not_blink_task;
     if (readSensor(operand)) break;
-    delayMe(50);
+    delayMe(POLL_DELAY);
     return;
     
   case OPCODE_ATGTE: // wait for analog sensor>= value
     blinkState=not_blink_task;
     if (IODevice::readAnalogue(operand) >= (int)(getOperand(1))) break;
-    delayMe(50);
+    delayMe(POLL_DELAY);
     return;
     
   case OPCODE_ATLT: // wait for analog sensor < value
     blinkState=not_blink_task;
     if (IODevice::readAnalogue(operand) < (int)(getOperand(1))) break;
-    delayMe(50);
+    delayMe(POLL_DELAY);
     return;
       
   case OPCODE_ATTIMEOUT1:   // ATTIMEOUT(vpin,timeout) part 1
@@ -640,7 +645,7 @@ void RMFT2::loop2() {
       blinkState=at_timeout;
       break; // and drop through
     }
-    delayMe(50);
+    delayMe(POLL_DELAY);
     return;
     
   case OPCODE_IFTIMEOUT: // do next operand if timeout flag set
@@ -653,7 +658,7 @@ void RMFT2::loop2() {
     if (readSensor(operand)) {
       // reset timer and keep waiting
       waitAfter=millis();
-      delayMe(50);
+      delayMe(POLL_DELAY);
       return;
     }
     if (millis()-waitAfter < getOperand(1) ) return;
@@ -663,7 +668,7 @@ void RMFT2::loop2() {
     if (!TrackManager::isPowerOn(operand)) {
       // reset timer to half a second and keep waiting
       waitAfter=millis();
-      delayMe(50);
+      delayMe(POLL_DELAY);
       return;
     }
     if (millis()-waitAfter < 500 ) return;
