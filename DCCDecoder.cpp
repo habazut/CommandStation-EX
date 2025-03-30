@@ -71,6 +71,9 @@ bool DCCDecoder::parse(DCCPacket &p) {
     case 0x20: // 001x-xxxx Extended commands
       if (instr[0] == 0B00111111) { // 128 speed steps
 	if ((locoInfoChanged = LocoTable::updateLoco(addr, instr[1])) == true) {
+	  byte speed = instr[1] & 0B01111111;
+	  byte direction = instr[1] & 0B10000000;
+	  DCC::setThrottle(addr, speed, direction);
 	  //DIAG(F("UPDATE"));
 	  // send speed change to DCCEX here
 	}
