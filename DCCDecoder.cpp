@@ -20,6 +20,7 @@
 #include "LocoTable.h"
 #include "DCCEXParser.h"
 #include "DIAG.h"
+#include "DCC.h"
 
 bool DCCDecoder::parse(DCCPacket &p) {
   const byte DECODER_MOBILE = 1;
@@ -143,8 +144,12 @@ bool DCCDecoder::parse(DCCPacket &p) {
       if (instr[0] & 0B10000000) {  // Basic Accessory
 	addr = (((~instr[0]) & 0B01110000) << 2) + addr;
 	byte port = (instr[0] & 0B00000110) >> 1;
+	byte activate = (instr[0] & 0B00001000) >> 3;
+	byte coil = (instr[0] & 0B00000001);
 	locoInfoChanged = true;
-	(void)port;
+	(void)addr; (void)port; (void)coil; (void)activate;
+//	DIAG(F("HL=%d LL=%d C=%d A=%d"), addr, port, coil, activate);
+	DCC::setAccessory(addr, port, coil, activate);
       } else { // Accessory Extended NMRA spec, do we need to decode this?
 	/*
 	addr = (addr << 5) +

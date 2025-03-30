@@ -16,7 +16,7 @@
  */
 #include <Arduino.h>
 
-#define MAX_LOCOS 128
+#include "DCC.h" // fetch MAX_LOCOS from there
 
 class LocoTable {
 public:
