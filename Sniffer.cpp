@@ -1,10 +1,11 @@
 #ifdef ARDUINO_ARCH_ESP32
+#define DIAG_LED 33
 #include "Sniffer.h"
 #include "DIAG.h"
 //extern Sniffer *DCCSniffer;
 
 static void packeterror() {
-  digitalWrite(2,HIGH);
+  digitalWrite(DIAG_LED,HIGH);
   // turn or error led or something
 }
 
@@ -39,16 +40,21 @@ static bool halfbits2byte(uint16_t b, byte *dccbyte) {
   return true;
 }
 
+static void IRAM_ATTR blink_diag(int limit) {
+  delay(500);
+  for (int n=0 ; n<limit; n++) {
+    digitalWrite(DIAG_LED,HIGH);
+    delay(200);
+    digitalWrite(DIAG_LED,LOW);
+    delay(200);
+  }
+}
+
 static bool IRAM_ATTR cap_ISR_cb(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_channel, const cap_event_data_t *edata,void *user_data) {
   if (edata->cap_edge == MCPWM_BOTH_EDGE) {
     // should not happen at all
     // delays here might crash sketch
-    for (int n=0 ; n<10; n++) {
-      digitalWrite(2,HIGH);
-      delay(500);
-      digitalWrite(2,LOW);
-      delay(500);
-    }
+    blink_diag(2);
     return 0;
   }
   if (user_data) ((Sniffer *)user_data)->processInterrupt(edata->cap_value, edata->cap_edge == MCPWM_POS_EDGE);
@@ -71,8 +77,9 @@ Sniffer::Sniffer(byte snifferpin) {
     .capture_cb = cap_ISR_cb,                 // user defined ISR/callback
     .user_data = (void *)this                 // user defined argument to callback
   };
-  pinMode(2 ,OUTPUT);
-  digitalWrite(2,LOW);
+  pinMode(DIAG_LED ,OUTPUT);
+  blink_diag(3); // so that we know we have DIAG_LED
+  DIAG(F("Init sniffer on pin %d"), snifferpin);
   ESP_ERROR_CHECK(mcpwm_capture_enable_channel(MCPWM_UNIT_0, MCPWM_SELECT_CAP0, &MCPWM_cap_config));
 }
 
@@ -101,6 +108,7 @@ void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
     } else {
       bit = 1;
       }*/
+    // update state variables for next round
     lastticks = capticks;
     lastedge = posedge;
     bitfield = bitfield << (uint64_t)1;
@@ -119,6 +127,7 @@ void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
 	// packet
 	packeterror();
       }
+      digitalWrite(DIAG_LED,LOW); // reset packet error LED at end of preamble
       currentbyte = 0;
       dcclen = 0;
       inpacket = true;
@@ -167,6 +176,8 @@ void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
 	}
       }
     }
+  } else { // lastedge == posedge
+    // this should not happen, check later
   }
 }
 

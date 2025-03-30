@@ -128,7 +128,7 @@ void setup()
   // Start RMFT aka EX-RAIL (ignored if no automnation)
   RMFT::begin();
 
-  dccSniffer = new Sniffer(16);
+  dccSniffer = new Sniffer(BOOSTER_INPUT);
   dccDecoder = new DCCDecoder();
 
   // Invoke any DCC++EX commands in the form "SETUP("xxxx");"" found in optional file mySetup.h.
@@ -174,11 +174,11 @@ void loopdiag(unsigned long timeout)
       if (dccSniffer){
 	uint64_t val = dccSniffer->getDebug();
 	int n = 64;
-	Serial.print("< ");
+	Serial.print("<* LOOPDIAG ");
 	while (n--) {
 	  Serial.print(val&(1ULL<<n)?"1":"0");
 	}
-	Serial.println(" >");
+	Serial.println(" >\n");
 /*
 	(dccSniffer->fetchPacket()).print(Serial);
 */
