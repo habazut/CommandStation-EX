@@ -1,5 +1,5 @@
 /*
- *  © 2025 Harald Barth
+ *  Â© 2025 Harald Barth
  *  
  *  This file is part of CommandStation-EX
  *
