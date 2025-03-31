@@ -157,7 +157,7 @@ bool DCCDecoder::parse(DCCPacket &p) {
 	byte coil = (instr[0] & 0B00000001);
 	locoInfoChanged = true;
 	(void)addr; (void)port; (void)coil; (void)activate;
-//	DIAG(F("HL=%d LL=%d C=%d A=%d"), addr, port, coil, activate);
+	DIAG(F("HL=%d LL=%d C=%d A=%d"), addr, port, coil, activate);
 	DCC::setAccessory(addr, port, coil, activate);
       } else { // Accessory Extended NMRA spec, do we need to decode this?
 	/*

@@ -24,7 +24,10 @@
 
 static void packeterror() {
   digitalWrite(DIAG_LED,HIGH);
-  // turn or error led or something
+}
+
+static void clear_packeterror() {
+  digitalWrite(DIAG_LED,LOW);
 }
 
 static bool halfbits2byte(uint16_t b, byte *dccbyte) {
@@ -38,7 +41,6 @@ static bool halfbits2byte(uint16_t b, byte *dccbyte) {
   }
 */
   for(byte n=0; n<8; n++) {
-    // n loops from 7 to 0
     switch (b & 0x03) {
     case 0x01:
     case 0x02:
@@ -144,8 +146,9 @@ void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
 	// got a preamble in the middle of a
 	// packet
 	packeterror();
+      } else {
+	clear_packeterror(); // everything fine again at end of preable after good packet
       }
-      digitalWrite(DIAG_LED,LOW); // reset packet error LED at end of preamble
       currentbyte = 0;
       dcclen = 0;
       inpacket = true;
@@ -182,6 +185,18 @@ void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
 	    inpacket = false;
 	    dcclen = currentbyte+1;
 	    debugfield = bitfield;
+	    // put it into the out packet
+	    if (fetchflag) {
+	      // not good, should have been fetched
+              // blink_diag(1);
+	      packeterror(); // or better?
+	    }
+	    DCCPacket temppacket(dccbytes, dcclen);
+	    if (true) { //if (!(temppacket == outpacket)) {
+	      // we have something new to fetch
+	      outpacket = temppacket;
+	      fetchflag = true;
+	    }
 	    return;
 	  }
 	  break;

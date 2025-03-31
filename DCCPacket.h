@@ -19,23 +19,50 @@
 #include <Arduino.h>
 #ifndef DCCPacket_h
 #define DCCPacket_h
+#include <strings.h>
 
 class DCCPacket {
 public:
-  DCCPacket(byte l, byte *d) : _len(l)
-  {
-    _data = (byte *)malloc(_len);
+  DCCPacket() {
+    _len = 0;
+    _data = NULL;
+  };
+  DCCPacket(byte *d, byte l) {
+    _len = l;
+    _data = new byte[_len];
     for (byte n = 0; n<_len; n++)
       _data[n] = d[n];
   };
-  DCCPacket(const DCCPacket &old)
-  {
+  DCCPacket(const DCCPacket &old) {
     _len = old._len;
-    _data = (byte *)malloc(_len);
+    _data = new byte[_len];
     for (byte n = 0; n<_len; n++)
       _data[n] = old._data[n];
   };
-  ~DCCPacket() { if (_len && _data != NULL) free(_data); };
+  DCCPacket &operator=(const DCCPacket &rhs) {
+    if (this == &rhs)
+      return *this;
+    delete[]_data;
+    _len = rhs._len;
+    _data = new byte[_len];
+    for (byte n = 0; n<_len; n++)
+      _data[n] = rhs._data[n];
+    return *this;
+  };
+  ~DCCPacket() {
+    if (_len) {
+      delete[]_data;
+      _len = 0;
+      _data = NULL;
+    }
+  };
+  inline bool operator==(const DCCPacket &right) {
+    if (_len != right._len)
+      return false;
+    if (_len == 0)
+      return true;
+    return (bcmp(_data, right._data, _len) == 0);
+  };
   void print(HardwareSerial &s) {
     s.print("<* DCCPAKET ");
     for (byte n = 0; n< _len; n++) {

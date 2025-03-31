@@ -42,16 +42,19 @@ public:
     return i;
   };
   inline DCCPacket fetchPacket() {
-    noInterrupts();
-    // if dcclen = 0 which means that there
-    // is no new data, this will create a
+    // if there is no new data, this will create a
     // packet with length 0 (which is no packet)
-    DCCPacket d(dcclen, dccbytes);
-    dcclen = 0; // reset (data has been fetched)
+    DCCPacket p;
+    noInterrupts();
+    if (fetchflag) {
+      p = outpacket;
+      fetchflag = false; // (data has been fetched)
+    }
     interrupts();
-    return d;
+    return p;
   };
 private:
+  // keep these vars in processInterrupt only
   uint64_t bitfield = 0;
   uint64_t debugfield = 0;
   int32_t diffticks;
@@ -61,6 +64,9 @@ private:
   byte dccbytes[MAXDCCPACKETLEN];
   byte dcclen = 0;
   bool inpacket = false;
+  // these vars are used as interface to other parts of sniffer
   byte halfbitcounter = 0;
+  bool fetchflag = false;
+  DCCPacket outpacket;
 };
 #endif
