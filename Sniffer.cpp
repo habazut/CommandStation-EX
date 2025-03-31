@@ -192,9 +192,10 @@ void IRAM_ATTR Sniffer::processInterrupt(int32_t capticks, bool posedge) {
 	      packeterror(); // or better?
 	    }
 	    DCCPacket temppacket(dccbytes, dcclen);
-	    if (true) { //if (!(temppacket == outpacket)) {
-	      // we have something new to fetch
-	      outpacket = temppacket;
+	    if (!(temppacket == prevpacket)) {
+	      // we have something new to offer to the fetch routine
+	      outpacket.push_back(temppacket);
+	      prevpacket = temppacket;
 	      fetchflag = true;
 	    }
 	    return;

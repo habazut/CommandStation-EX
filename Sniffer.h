@@ -18,6 +18,7 @@
  */
 #ifdef ARDUINO_ARCH_ESP32
 #include <Arduino.h>
+#include <list>
 #include "driver/mcpwm.h"
 #include "soc/mcpwm_struct.h"
 #include "soc/mcpwm_reg.h"
@@ -46,8 +47,11 @@ public:
     // packet with length 0 (which is no packet)
     DCCPacket p;
     noInterrupts();
+    if (!outpacket.empty()) {
+      p = outpacket.front();
+      outpacket.pop_front();
+    }
     if (fetchflag) {
-      p = outpacket;
       fetchflag = false; // (data has been fetched)
     }
     interrupts();
@@ -67,6 +71,7 @@ private:
   // these vars are used as interface to other parts of sniffer
   byte halfbitcounter = 0;
   bool fetchflag = false;
-  DCCPacket outpacket;
+  std::list<DCCPacket> outpacket;
+  DCCPacket prevpacket;
 };
 #endif
