@@ -79,10 +79,16 @@ bool DCCDecoder::parse(DCCPacket &p) {
 	}
       }
       break;
-    case 0x40: // 010x-xxxx Speed
+    case 0x40: // 010x-xxxx 28 (or 14 step) speed we assume 28
     case 0x60: // 011x-xxxx
       if ((locoInfoChanged = LocoTable::updateLoco(addr, instr[0] & 0B00111111)) == true) {
-	// send speed change to DCCEX here
+	byte speed = instr[1] & 0B00001111; // first only look at 4 bits
+	if (speed > 1) {               // neither stop nor emergency stop, recalculate speed
+	  speed = ((instr[1] & 0B00001111) << 1) + bitRead(instr[1], 4); // reshuffle bits
+	  speed = (speed - 3) * 9/2;
+	}
+	byte direction = instr[1] & 0B00100000;
+	DCC::setThrottle(addr, speed, direction);
       }
       break;
     case 0x80: // 100x-xxxx Function group 1
