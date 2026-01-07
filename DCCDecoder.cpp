@@ -26,6 +26,7 @@
 bool DCCDecoder::parse(DCCPacket &p) {
   if (!active)
     return false;
+  bool unknown = true;
   const byte DECODER_MOBILE = 1;
   const byte DECODER_ACCESSORY = 2;
   byte decoderType = 0; // use 0 as none
@@ -49,13 +50,6 @@ bool DCCDecoder::parse(DCCPacket &p) {
     return false;
   }
 
-/*
-  Serial.print("< ");
-  for(int n=0; n<8; n++) {
-    Serial.print(d[0]&(1<<n)?"1":"0");
-  }
-  Serial.println(" >");
-*/
   if (bitRead(d[0],7) == 0) { // bit7 == 0 => loco short addr
     decoderType = DECODER_MOBILE;
     instr = d+1;
@@ -75,6 +69,7 @@ bool DCCDecoder::parse(DCCPacket &p) {
     switch (instr[0] & 0xE0) {
     case 0x20: // 001x-xxxx Extended commands
       if (instr[0] == 0B00111111) { // 128 speed steps
+	unknown = false;
 	if ((locoInfoChanged = LocoTable::updateLoco(addr, instr[1])) == true) {
 	  byte speed = instr[1] & 0B01111111;
 	  byte direction = instr[1] & 0B10000000;
@@ -86,6 +81,7 @@ bool DCCDecoder::parse(DCCPacket &p) {
       break;
     case 0x40: // 010x-xxxx 28 (or 14 step) speed we assume 28
     case 0x60: // 011x-xxxx
+      unknown = false;
       if ((locoInfoChanged = LocoTable::updateLoco(addr, instr[0] & 0B00111111)) == true) {
 	byte speed = instr[0] & 0B00001111; // first only look at 4 bits
 	if (speed > 1) {               // neither stop nor emergency stop, recalculate speed
@@ -97,12 +93,14 @@ bool DCCDecoder::parse(DCCPacket &p) {
       }
       break;
     case 0x80: // 100x-xxxx Function group 1
+      unknown = false;
       if ((locoInfoChanged = LocoTable::updateFunc(addr, instr[0], 1)) == true) {
 	byte normalized = (instr[0] << 1 & 0x1e) | (instr[0] >> 4 & 0x01);
 	DCCEXParser::funcmap(addr, normalized, 0, 4);
       }
       break;
     case 0xA0: // 101x-xxxx Function group 3 and 2
+      unknown = false;
     {
       byte low, high;
       if (bitRead(instr[0], 4)) {
@@ -118,6 +116,7 @@ bool DCCDecoder::parse(DCCPacket &p) {
     }
     break;
     case 0xC0: // 110x-xxxx Extended (here are functions F13 and up
+      unknown = false;
       switch (instr[0] & 0B00011111) {
       case 0B00011110:  // F13-F20 Function Control
 	if ((locoInfoChanged = LocoTable::updateFunc(addr, instr[0], 13)) == true) {
@@ -128,6 +127,7 @@ bool DCCDecoder::parse(DCCPacket &p) {
 	}
       break;
       case 0B00011111:  // F21-F28 Function Control
+      unknown = false;
 	if ((locoInfoChanged = LocoTable::updateFunc(addr, instr[1], 21)) == true) {
 	  DCCEXParser::funcmap(addr, instr[1], 21, 28);
 	}  // updateFunc handles only the 4 low bits as that is the most common case
@@ -154,6 +154,23 @@ bool DCCDecoder::parse(DCCPacket &p) {
     }
     return locoInfoChanged;
   }
+
+  if (unknown) {
+    p.print();
+    /*
+    Serial.print("<**");
+    byte b;
+    byte n;
+    for (b = 0; b < p.len(); n++) {
+      for(n=0; n<8; n++) {
+	if (n%4 == 0) Serial.print(" ");
+	Serial.print(d[b]&(1<<n)?"1":"0");
+      }
+    }
+    Serial.println(" **>");
+    */
+  }
+
   if (decoderType == DECODER_ACCESSORY) {
       if (instr[0] & 0B10000000) {  // Basic Accessory
 	addr = (((~instr[0]) & 0B01110000) << 2) + addr;
