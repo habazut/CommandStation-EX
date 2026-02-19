@@ -180,7 +180,7 @@ void SerialUsbLog::streamOut(Print* targetStream) {
 // #if defined(ARDUINO_ARCH_ESP32)
 //   portENTER_CRITICAL(&_mux);
 // #endif
-
+/*
   if (_overflow) {
     // output from current position to end, then start to current position
     targetStream->write(_buffer + _pos_write, _bufferSize - _pos_write);
@@ -188,7 +188,8 @@ void SerialUsbLog::streamOut(Print* targetStream) {
   } else {
     targetStream->write(_buffer, _pos_write);
   }
-
+*/
+  targetStream->write("TEST\r\n\r\n", 8);
 // #if defined(ARDUINO_ARCH_ESP32)
 //   portEXIT_CRITICAL(&_mux);
 // #endif
@@ -291,6 +292,7 @@ void SerialUsbLog::loop() {
 
   auto client = server.available();
   if (!client) return;
+  DIAG(F("TCP connect port %d from port %d"), client.localPort(), client.remotePort());
 
   // Read request line: "GET /path?... HTTP/1.1"
   String reqLine = client.readStringUntil('\r');
@@ -314,10 +316,10 @@ void SerialUsbLog::loop() {
       "HTTP/1.1 405 Method Not Allowed\r\n"
       "Connection: close\r\n\r\n"
     );
-    client.stop();
-    return;
+    goto endloop;
   }
 
+  DIAG(F("Start path parsing"));
   // ----------------------------- /log incremental feed -----------------------------
   if (path == "/log") {
     uint32_t from = (uint32_t)queryParamInt(uri, "from", 0);
@@ -336,19 +338,22 @@ void SerialUsbLog::loop() {
     if (avail > (uint32_t)chunk) avail = (uint32_t)chunk;
     uint32_t next = start + avail;
 
+    DIAG(F("header /log"));
+
     client.print(
       "HTTP/1.1 200 OK\r\n"
       "Content-Type: text/plain; charset=utf-8\r\n"
       "Cache-Control: no-store\r\n"
       "Connection: close\r\n"
     );
+    DIAG(F("xheader /log"));
     client.printf("X-Next-Seq: %lu\r\n\r\n", (unsigned long)next);
 
     uint32_t nextSeqOut = from;
+    DIAG(F("header /log"));
     SerialLog.streamOutFrom(&client, from, (size_t)chunk, nextSeqOut);
 
-    client.stop();
-    return;
+    goto endloop;
   }
 
   // --------------------------------- /dump full dump --------------------------------
@@ -362,10 +367,11 @@ void SerialUsbLog::loop() {
     );
 
     // One-shot dump of current ring snapshot
-    SerialLog.streamOut(&client);
-
-    client.stop();
-    return;
+    //SerialLog.streamOut(&client);
+    DIAG(F("before write"));
+    client.write("Test\r\n\r\n", 8);
+    DIAG(F("after write"));
+    goto endloop;
   }
 
   // --------------------------------- / HTML shell ---------------------------------
@@ -378,8 +384,7 @@ void SerialUsbLog::loop() {
       #include "SerialUsbLog.html.h"
     );
 
-    client.stop();
-    return;
+    goto endloop;
   }
 
   // --------------------------------- 404 ---------------------------------
@@ -387,8 +392,9 @@ void SerialUsbLog::loop() {
     "HTTP/1.1 404 Not Found\r\n"
     "Connection: close\r\n\r\n"
   );
+endloop:
+  DIAG(F("Disconnect port %d from port %d"), client.localPort(), client.remotePort());
   client.stop();
-
 }
 // --------------------------- End of SerialUsbLog.cpp ---------------------------
 #endif // ENABLE_SERIAL_LOG

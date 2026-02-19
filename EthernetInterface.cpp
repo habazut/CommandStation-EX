@@ -128,6 +128,7 @@ void EthernetInterface::acceptClient() { // STM32 version
   auto client=server->available();
   if (!client) return;
   // check for existing client
+  DIAG(F("TCP connect port %d from port %d"), client.localPort(), client.remotePort());
   for (byte socket = 0; socket < MAX_SOCK_NUM; socket++)
     if (inUse[socket] && client == clients[socket]) return;
       

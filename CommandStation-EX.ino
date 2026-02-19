@@ -222,7 +222,7 @@ void loop()
   // Report any decrease in memory (will automatically trigger on first call)
   static int ramLowWatermark = __INT_MAX__; // replaced on first loop
 
-  #ifdef ARDUINO_ARCH_AVR
+#ifndef ARDUINO_ARCH_AVR ///XXXXXX
   // count every byte of free RAM on AVR
   int freeNow = DCCTimer::getMinimumFreeMemory();
   if (freeNow < ramLowWatermark) {
