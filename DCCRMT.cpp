@@ -1,5 +1,5 @@
 /*
- *  © 2021-2024, Harald Barth.
+ *  © 2021-2026, Harald Barth.
  *  
  *  This file is part of DCC-EX
  *
@@ -126,6 +126,8 @@ RMTChannel *channelHandle[8] = { 0 };
 
 static volatile uint8_t cutoutCounter = 0;
 
+// As the DCC packet end marker was moved to the next preamble
+// this happens at the beginning of that end packet marker (bit).
 void IRAM_ATTR interrupt(rmt_channel_t channel, void *t) {
   RMTChannel *tt = channelHandle[channel];
   if (tt) tt->RMTinterrupt();
@@ -146,8 +148,8 @@ void IRAM_ATTR interrupt(rmt_channel_t channel, void *t) {
   }
 }
 
-
-static void IRAM_ATTR mvpwmIsrHandler(void* arg) {
+// This intrrupt is called on sync which is configured on mcpwmPulseOn()
+static void IRAM_ATTR mcpwmIsrHandler(void* arg) {
   if (MCPWM0.int_st.timer0_tez_int_st) {
     MCPWM0.int_clr.timer0_tez_int_clr = 1;
     if (cutoutCounter == 1) {
@@ -172,7 +174,13 @@ static void IRAM_ATTR mvpwmIsrHandler(void* arg) {
   }
 }
 
-static void IRAM_ATTR mvpwmPulseOn() {
+
+// Configure MCPWM unit 0.
+// https://docs.espressif.com/projects/esp-idf/en/v4.4/esp32/api-reference/peripherals/mcpwm.html
+// Connect Operator 0 output A PWM0A to pin XXX   (this should go to brake then)
+// Connect Timer0 input sync 0 SYNC0 from pin YYY (this should connect to RMT channel 0 output
+// pin through the mux)
+static void IRAM_ATTR mcpwmPulseOn() {
 
   // for debug
   //gpio_set_direction((gpio_num_t)13, GPIO_MODE_OUTPUT);
@@ -194,6 +202,8 @@ static void IRAM_ATTR mvpwmPulseOn() {
         .timer_val = 939,
         .count_direction = MCPWM_TIMER_DIRECTION_UP,
   };
+  // default is pos edge trigger, handled by mcpwm_sync_invert_gpio_synchro()
+  // if neg edge needed
   mcpwm_sync_configure(MCPWM_UNIT_0, MCPWM_TIMER_0, &sync_conf);
   mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM_SYNC_0, 5 /*DIRA*/);
 }
@@ -289,10 +299,10 @@ RMTChannel::RMTChannel(pinpair pins, bool isMain) {
   //rmt_write_items(channel, preamble, preambleLen, false);
   RMTprefill();
   dataReady = false;
-  // test with mvpwm
-  mvpwmPulseOn();
+  // test with mcpwm
+  mcpwmPulseOn();
   ESP_ERROR_CHECK(mcpwm_isr_register(
-		    MCPWM_UNIT_0, mvpwmIsrHandler, NULL,
+		    MCPWM_UNIT_0, mcpwmIsrHandler, NULL,
 		    ESP_INTR_FLAG_LOWMED|
 		    ESP_INTR_FLAG_SHARED,
 		    /*ESP_INTR_FLAG_IRAM,*/
