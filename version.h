@@ -3,7 +3,143 @@
 
 #include "StringFormatter.h"
 
-#define VERSION "5.2.85"
+#define VERSION "5.5.64"
+// 5.5.64 - I2C scan included in <D HAL SHOW>
+// 5.5.63 - Bugfix: EXRAIL IFLOCO did not handle -1 (loco not found)
+// 5.5.62 - EXRAIL IFLOCO(list)
+//        - NEOPIXEL automatic WHITE(if available)  when red=green=blue
+// 5.5.61 - Bugfix: PCA9685 driver did not handle mux I2C addresses for writing registers
+// 5.5.60 - EXRAIL SPEEDUP(by) SLOWDOWN(by) SPEED_REL(percent)
+//        - EXRAIL ZTEST diff between cmds and test captions 
+//        - Tuning DFPlayer base timing.  
+// 5.5.59 - Bugfix buffer size for consist feedback
+//        - <!Q> command to query estop lock status
+// 5.5.58 - Freemem in 4k blocks on 32bit cpus
+//        - newline fix for Engine Driver
+// 5.5.57 - XL9535 HAL driver
+//        - ESTOP LOCK feedback to throttles
+// 5.5.56 - ESTOP_PAUSE and ESTOP_RESUME functions/commands
+//        - DFPlayerI2C auto detect UART crystal frequency
+//        - DFPlayer PAUSE and RESUME commands, and EQ names
+//        - TCA9555 alias of PCA9555
+// 5.5.55 - Bugfix: Real time clock i2c address recognition
+//        - DFPlayer redesign to amalgamate Serial and i2c drivers
+//        - DFPlayer <y> commands and EXRAIL PLAY_ macros
+//        - EXRAIL Documentation spelling corrections  
+// 5.5.54 - Bugfix: Allow longer serial payload length in parser on 32 bit arch, save RAM on AVR
+// 5.5.53 - Bugfix: EXRAIL Asserts pbSize calculation error for pin blacklist
+// 5.5.52 - Command station consists <^> and EXRAIL BUILD_CONSIST/BREAK_COMNSIST
+// 5.5.51 - Bugfix: EXRAIL failed TURNTABLE create commands (I2C off) can crash CS
+//        - Bugfix: EXRAIL be extra careful not to deref nullptr
+// 5.5.50 - Replace the SC power status with something better
+//        - EXRAIL RANDOM_CALL, RANDOM_FOLLOW
+// 5.5.49 - EXRAIL </> displays wait_while_red state
+//        - EXRAIL SAVE_SPEED,RESTORE_SPEED,XSAVE_SPEED,XRESTORE_SPEED macros
+// 5.4.48 - EXRAIL improvements:
+//        - IFROUTE_HIDDEN, IFROUTE_DISABLED, IFROUTE_ACTIVE, IFROUTE_INACTIVE macros
+//        - FREEALL and </FREEALL> to free all reserves
+//        - WAIT_WHILE_RED macro to wait at red signals
+//        - START_SHARED nd START_SEND macros to share or transfer locos to new tasks
+// 5.5.47 - Make it possible to turn off max ack duration check
+//        - Wifi: Make it possible to hide the SSID
+//        - New trainbrains debug option
+//        - ESP32: SSID named "OFF" will turn all WIFI off
+//        - DCCEX protocol change: <#> returns <# N> where N is the number of presumably empty slots for mobile decoders
+//        - Bugfix: Race condition with RMTChannel::dataRepeat causes packets to be lost #460
+//        - Handle loco table full
+// 5.5.46 - Major rewrite of loco table 
+// 5.5.45 - Incoming <@ row col "text"> command
+//        - Bugfix: <t cab> for unknown loco
+//        - new <R LOCOID> and <R CONSIST> commands
+//        - new EXRAIL IFSTASHED_HERE(stashId) function  
+// 5.5.44 - Config simplification (default obvious values)
+//        - Config will no longer include config.example.h
+//        - Bugfix: DS1307 serial when clock not set
+//        - Bugfix: I2C speed set in some drivers
+// 5.5.43 - Upgraded Trainbrains HAL driver 
+// 5.5.42 - Bugfix: ESP32 WIFI AP mode was not always selected when wanted
+// 5.5.41 - Bugfix: Toolbox not showing sensors
+//        - MAX_LOCOS can be defined in config.h
+// 5.5.40 - Bugfix: EXSensorCAM.h use check byte for i2c error detection
+// 5.5.39 - Remove of unused EX-CommandStation-installer.exe
+//        - Bugfix: Sniffer and reminder table overflow
+// 5.5.38 - Bugfix: restore EXRAIL/ENDEXRAIL obsolete macros as no-operations
+//        - RAM Saver feature: JMRI_SENSOR and JMRI_SENSOR_NOPULLUP
+// 5.5.37 - Bugfix: Keep power status of track when doing join/unjoin, new keep power option for setTrackMode()
+// 5.5.36 - make more diag conditional
+//        - Bugfix: SSD1309 OLED controllers
+// 5.5.35 - BUGFIX DCC Packet Queue timing leak with single loco
+// 5.5.34 - STM32: Remove I2C interrupt blocking waveform interrupt
+//        - Bugfix: Negative route Ids
+// 5.5.33 - Fix CONFIG_SERVO when default PCA9685 definition used.
+// 5.5.32 - Feature: Enable sniffer on CSB-1
+// 5.5.31 - <JL screen startRow> track status command
+//        - myTrackStatus.example.h added
+//        - Provide for WiFi false on ESP32
+// 5.5.30 - EXRAIL </> shows why tasks are waiting 
+// 5.5.29 - Resolved compiler warnings 
+// 5.5.28 - DCC Queue memory leak fix
+// 5.5.27 - PCF8574 output pin initialization parameter
+// 5.5.26 - PCA9554 and TCA9554/9534 I2C 8-bit GPIO expander drivers
+// 5.2.25 - IO_Bitmap and assicated Exrail macros
+// 5.5.24 - SensorCAM in I2C scan and automatically setClock
+// 5.5.23 - Reminder loop Idle packet optimization
+// 5.5.22 - (5.4.9) Handle non-compliant decoders returning 255 for cv 20 and confusing <R> with bad consist addresses.
+//        - DCC 5mS gap to same loco DCC packet restriction
+//        - Catch up MASTER for ESP32 IDF version check
+//        - Catch up MASTER for Serial input length check
+//        - Catch up MASTER for JOIN/POWER order change
+// 5.5.21 - Backed out the broken merge with frequency change and 
+// 5.5.20 - EXRAIL SET/RESET assert fix  
+// 5.5.19 - Railcom change to use RailcomCollector device  
+// 5.5.18 - New STASH internals 
+//        - EXRAIL IFSTASH/CLEAR_ANY_STASH
+//        - <JM CLEAR ANY id> to clear any stash with loco id
+//        - See Release_Notes/Stash.md  
+// 5.5.17 - Extensive new compile time checking in exrail scripts (duplicate sequences etc), no function change 
+// 5.5.16 - DOXYGEN comments in EXRAIL2MacroReset.h
+// 5.5.15 - Support for F429ZI/F329ZI
+//        - Own mDNS support for (wired) Ethernet
+// 5.5.14 - DCC Non-blocking packet queue with priority
+// 5.5.13 - Update STM32duino core to v19.0.0. for updated PeripheralPins.c in preparation for F429/439ZI Ethernet support 
+// 5.5.12 - Websocket support (wifi only) 
+// 5.5.11 - (5.4.2) accessory command reverse
+// 5.5.10 - CamParser fix
+// 5.5.9  - (5.4.3) fix changeFn for functions 29..31
+// 5.5.8  - EXSensorCam clean up to match other filters and
+//        - avoid need for config.h settings
+//        - Test: IO_I2CDFPlayer.h inserted 10mS deleay in Init_SC16IS752() just after soft-reset for board with 1.8432 Mhz xtal
+//        - IO_I2CDFPlayer.h: fixed 2 compiler errors as the compilers are getting stricter
+// 5.5.7  - ESP32 bugfix packet buffer race (as 5.4.1)
+// 5.5.6  - Fix ESP32 build bug caused by include reference loop
+// 5.5.5  - Railcom implementation with IO_I2CRailcom driver
+//        - response analysis and block management.
+//        - <r locoid cv>  POM read using Railcom.
+//        - See Release_notes/Railcom.md
+// 5.5.4  - Split ESP32 from DCCWaveform to DCCWaveformRMT
+//        - Railcom Cutout control (DCCTimerAVR Mega only so far) 
+// 5.5.3  - EXRAIL ESTOPALL,XPOM, 
+//        - Bugfix RESERVE to cause ESTOP.(was STOP)
+//        - Correct direction sync after manual throttle change. 
+//        - plus ONBLOCKENTER/EXIT in preparation for Railcom
+// 5.5.2  - DS1307 Real Time clock 
+// 5.5.1  - Momentum 
+// 5.5.0  - New version on devel
+// 5.4.3  - bugfix changeFn for functions 29..31
+// 5.4.2  - Reversed turnout bugfix
+// 5.4.1  - ESP32 bugfix packet buffer race
+// 5.4.0  - New version on master
+// 5.2.96 - EXRAIL additions XFWD() and XREV()
+// 5.2.95 - Release candidate for 5.4
+// 5.2.94 - Bugfix: Less confusion and simpler code around the RCN213 defines
+// 5.2.93 - Bugfix ESP32: clear progTrackSyncMain (join flag) when prog track is removed
+// 5.2.92 - Bugfix: FADE power off fix, EXRAIL power diagnostic fix.
+// 5.2.91 - Bugfix: Neopixel I2C overlap check
+// 5.2.90 - Bugfix: EXRAIL EXTT_TURNTABLE() now has description as optional in line with ocumentation (also fixed DCC_TURNTABLE) 
+// 5.2.89 - EXRAIL SET(vpin[,npins]) RESET(vpin,[,npins]) pin range manipulation 
+// 5.2.88 - Fix bug where EX-Turntable objects return incorrect angle for home with <JP x>
+// 5.2.87 - CamParser and IO_EXSensorCam driver
+// 5.2.86 - IO_TCA8418 driver for keypad matrix input now fully functioning, including being able to use an interrupt pin
 // 5.2.85 - IO_TM1638 driver, SEG7 Exrail macro and _s7 segment pattern generator.
 // 5.2.84 - Fix TrackManager setDCCSignal and setPROGSignal for STM32 shadowing of PORTG/PORTH - this time it really is correct!
 // 5.2.83 - Various STM32 related fixes for serial ports, I2C pullups now turned off, and shadowing of PORTG/PORTH for TrackManager now correct

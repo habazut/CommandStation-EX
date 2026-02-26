@@ -78,11 +78,17 @@ int DCCTimer::freeMemory() {
 ////////////////////////////////////////////////////////////////////////
 #ifdef ARDUINO_ARCH_ESP32
 
+#if __has_include("esp_idf_version.h")
 #include "esp_idf_version.h"
-#if ESP_IDF_VERSION_MAJOR > 4
-#error "DCC-EX does not support compiling with IDF version 5.0 or later. Downgrade your ESP32 library to a version that contains IDE version 4. Arduino ESP32 library 3.0.0 is too new. Downgrade to one of 2.0.9 to 2.0.17"
+#endif
+#if ESP_IDF_VERSION_MAJOR == 4
+// all well correct IDF version
+#else
+#error "DCC-EX does not support compiling with IDF version 5.0 or later. Downgrade your ESP32 library to a version that contains IDF version 4. Arduino ESP32 library 3.0.0 is too new. Downgrade to one of 2.0.9 to 2.0.17"
 #endif
 
+// protect all the rest of the code from IDF version 5
+#if ESP_IDF_VERSION_MAJOR == 4
 #include "DIAG.h"
 #include <driver/adc.h>
 #include <soc/sens_reg.h>
@@ -197,7 +203,9 @@ void DCCTimer::DCCEXanalogWriteFrequencyInternal(uint8_t pin, uint32_t frequency
 }
 
 void DCCTimer::DCCEXledcDetachPin(uint8_t pin) {
-  DIAG(F("Clear pin %d channel"), pin);
+#ifdef DIAG_IO
+  DIAG(F("Clear pin %d from ledc channel"), pin);
+#endif
   pin_to_channel[pin] = 0;
   pinMatrixOutDetach(pin, false, false);
 }
@@ -322,6 +330,5 @@ void ADCee::scan() {
 
 void ADCee::begin() {
 }
-
+#endif //IDF v4
 #endif //ESP32
-

@@ -1,9 +1,9 @@
 /*
  *  © 2022 Paul M. Antoine
  *  © 2021 Neil McKechnie
- *  © 2020-2023 Harald Barth
+ *  © 2020-2025 Harald Barth
  *  © 2020-2021 Fred Decker
- *  © 2020-2021 Chris Harlow
+ *  © 2020-2025 Chris Harlow
  *  © 2023 Nathan Kellenicki
  *  
  *  This file is part of CommandStation-EX
@@ -45,15 +45,14 @@ The configuration file for DCC-EX Command Station
 //        the correct resistor could damage the sense pin on your Arduino or destroy
 //        the device.
 //
-// DEFINE MOTOR_SHIELD_TYPE BELOW. THESE ARE EXAMPLES. FULL LIST IN MotorDrivers.h
+// DEFINE MOTOR_SHIELD_TYPE BELOW. THESE ARE EXAMPLES. Full list in MotorDrivers.h
 //
 //  STANDARD_MOTOR_SHIELD : Arduino Motor shield Rev3 based on the L298 with 18V 2A per channel
 //  POLOLU_MOTOR_SHIELD   : Pololu MC33926 Motor Driver (not recommended for prog track)
-//  FUNDUMOTO_SHIELD      : Fundumoto Shield, no current sensing (not recommended, no short protection)
-//  FIREBOX_MK1           : The Firebox MK1                    
-//  FIREBOX_MK1S          : The Firebox MK1S
-//  IBT_2_WITH_ARDUINO    : Arduino Motor Shield for PROG and IBT-2 for MAIN
 //  EX8874_SHIELD         : DCC-EX TI DRV8874 based motor shield
+//  EXCSB1                : DCC-EX CSB-1 hardware
+//  EXCSB1_WITH_EX8874    : DCC-EX CSB-1 hardware with DCC-EX TI DRV8874 shield
+//  NO_SHIELD             : CS without any motor shield (as an accessory only CS)
 //   |
 //   +-----------------------v
 //
@@ -81,7 +80,7 @@ The configuration file for DCC-EX Command Station
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
-// NOTE: Only supported on Arduino Mega
+// NOTE: Not supported on Arduino Uno or Nano
 // Set to false if you not even want it on the Arduino Mega
 //
 #define ENABLE_WIFI true
@@ -116,13 +115,13 @@ The configuration file for DCC-EX Command Station
 // Your password may not contain ``"'' (double quote, ASCII 0x22).
 #define WIFI_PASSWORD "Your network passwd"
 //
-// WIFI_HOSTNAME: You probably don't need to change this
+// WIFI_HOSTNAME: You can change this if you have more than one
+// CS to make them show up with different names on the network.
+// Otherwise do not touch.
 #define WIFI_HOSTNAME "dccex"
 //
-// WIFI_CHANNEL: If the line "#define ENABLE_WIFI true" is uncommented, 
-// WiFi will be enabled (Mega only). The default channel is set to "1" whether
-// this line exists or not. If you need to use an alternate channel (we recommend
-// using only 1,6, or 11) you may change it here.
+// WIFI_CHANNEL: The default channel is set to "1". If you need to use an
+// alternate channel (we recommend using only 1,6, or 11) you may change it here.
 #define WIFI_CHANNEL 1
 //
 // WIFI_FORCE_AP: If you'd like to specify your own WIFI_SSID in AP mode, set this
@@ -132,10 +131,21 @@ The configuration file for DCC-EX Command Station
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
-// ENABLE_ETHERNET: Set to true if you have an Arduino Ethernet card (wired). This
-// is not for Wifi. You will then need the Arduino Ethernet library as well
+// ENABLE_ETHERNET: Set to true if you have an Arduino Ethernet card (wired) based
+// on the W5100/W5500 ethernet chip or an STM32 CS with builin ethernet like the F429ZI.
+// This is not for Wifi. You will then need the Arduino Ethernet library as well.
 //
 //#define ENABLE_ETHERNET true
+
+/////////////////////////////////////////////////////////////////////////////////////
+//
+// MAX_NUM_TCP_CLIENTS: If you on STM32 Ethernet (and only there) want more than
+// 9 (*) TCP clients, change this number to for example 20 here **AND** in
+// STM32lwiopts.h and follow the instructions in STM32lwiopts.h
+//
+// (*) It would be 10 if there would not be a bug in LwIP by STM32duino.
+//
+//#define MAX_NUM_TCP_CLIENTS 20
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -236,6 +246,15 @@ The configuration file for DCC-EX Command Station
 // at the same time, there must be a border.
 
 /////////////////////////////////////////////////////////////////////////////////////
+// REDEFINE locomotive state table size.
+// This is the maximum number of locos that can be controlled at the same time.
+// This defaults to 50 (8 on a UNO/NANO).
+// If you have enough free memory you can increase this to a maximum of 255.
+// If you are short of memory (typically a Mega with WiFi and lots of accessories)
+// you can decrease it (minimum 2)   
+//#define MAX_LOCOS 100
+
+/////////////////////////////////////////////////////////////////////////////////////
 // Some newer 32bit microcontrollers boot very quickly, so powering on I2C and other
 // peripheral devices at the same time may result in the CommandStation booting too
 // quickly to detect them.
@@ -270,8 +289,9 @@ The configuration file for DCC-EX Command Station
 // for triggering DCC Accessory Decoders, so that <a addr subaddr 0> generates a
 // DCC packet with D=1 (close turnout) and <a addr subaddr 1> generates D=0 
 // (throw turnout).
-//#define DCC_ACCESSORY_RCN_213
-//
+//#define DCC_ACCESSORY_COMMAND_REVERSE
+
+
 // HANDLING MULTIPLE SERIAL THROTTLES
 // The command station always operates with the default Serial port.
 // Diagnostics are only emitted on the default serial port and not broadcast.
@@ -334,4 +354,18 @@ The configuration file for DCC-EX Command Station
 //
 //#define SABERTOOTH 1
 
+/////////////////////////////////////////////////////////////////////////////////////
+//
+// SENSORCAM
+// ESP32-CAM based video sensors require #define to use appropriate base vpin number.
+//#define SENSORCAM_VPIN 700
+// To bypass vPin number, define CAM for ex-rail use e.g. AT(CAM 012) for S12 etc.
+//#define CAM SENSORCAM_VPIN+
+//
+//#define SENSORCAM2_VPIN 600   //define other CAM's if installed.
+//#define CAM2 SENSORCAM2_VPIN+ //for EX-RAIL commands e.g. IFLT(CAM2 020,1)
+//
+// For smoother power-up, when using the CAM, you may need a STARTUP_DELAY.
+// That is described further above.
+//
 /////////////////////////////////////////////////////////////////////////////////////

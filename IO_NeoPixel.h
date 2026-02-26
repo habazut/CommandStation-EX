@@ -129,7 +129,7 @@ class NeoPixel : public IODevice {
 public:
   
   static void create(VPIN vpin, int nPins, uint16_t mode=(NEO_GRB | NEO_KHZ800), I2CAddress i2cAddress=0x60) {
-    if (checkNoOverlap(vpin, nPins, mode, i2cAddress)) new NeoPixel(vpin, nPins, mode, i2cAddress);
+    if (checkNoOverlap(vpin, nPins, i2cAddress)) new NeoPixel(vpin, nPins, mode, i2cAddress);
   }
 
 private:
@@ -157,8 +157,9 @@ private:
 
     _redOffset=4+(mode >> 4 & 0x03);
     _greenOffset=4+(mode >> 2 & 0x03); 
-    _blueOffset=4+(mode & 0x03); 
-    if (4+(mode >>6 & 0x03) == _redOffset) _bytesPerPixel=3; 
+    _blueOffset=4+(mode & 0x03);
+    _whiteOffset=4+(mode >> 6 & 0x03); // if this is the same as red then we are doing a RGB string and the white byte is not used. If its different then we are doing a RGBW string and the white byte is used. 
+    if (_whiteOffset == _redOffset) _bytesPerPixel=3; 
     else _bytesPerPixel=4; // string has a white byte.
     
     _kHz800=(mode & NEO_KHZ400)==0;
@@ -206,6 +207,7 @@ private:
   
  // loop called by HAL supervisor 
   void _loop(unsigned long currentMicros) override {
+    (void)currentMicros;
     if (!_showPendimg) return;
     byte showBuffer[]={SEESAW_NEOPIXEL_BASE,SEESAW_NEOPIXEL_SHOW};
     I2CManager.write(_I2CAddress,showBuffer,sizeof(showBuffer));
@@ -291,19 +293,29 @@ private:
   }
 
   
-  void transmit(uint16_t pixel, bool show=true) { 
+  void transmit(uint16_t pixel) { 
     byte buffer[]={SEESAW_NEOPIXEL_BASE,SEESAW_NEOPIXEL_BUF,0x00,0x00,0x00,0x00,0x00};
     uint16_t offset= pixel * _bytesPerPixel;
     buffer[2]=(byte)(offset>>8);
     buffer[3]=(byte)(offset & 0xFF);
     
     if (isPixelOn(pixel)) {
-      auto colour=pixelBuffer[pixel];    
-      buffer[_redOffset]=colour.red;
-      buffer[_greenOffset]=colour.green;
-      buffer[_blueOffset]=colour.blue;
-    } // else leave buffer black (in buffer preset to zeros above)
-    
+      auto colour=pixelBuffer[pixel];  
+      if (_bytesPerPixel==4 
+           && colour.red==colour.blue 
+           && colour.red==colour.green) {
+           // we are doing a white pixel on a RGBW string. 
+           // To save electricity we can just send the white byte and leave the RGB bytes as zero.
+           buffer[_whiteOffset]=colour.red;
+      }
+      else {
+        buffer[_redOffset]=colour.red;
+        buffer[_greenOffset]=colour.green;
+        buffer[_blueOffset]=colour.blue;
+      } 
+    }
+    // else leave buffer black (in buffer preset to zeros above)
+  
     // Transmit pixel to driver
     I2CManager.write(_I2CAddress,buffer,4 +_bytesPerPixel);
     _showPendimg=true;
@@ -327,6 +339,7 @@ private:
   byte _redOffset;
   byte _greenOffset;
   byte _blueOffset;
+  byte _whiteOffset; // only used if 4 bytes per pixel (RGBW string)
   bool _kHz800; 
 };
 

@@ -2,7 +2,7 @@
  *  © 2021 M Steve Todd
  *  © 2021 Mike S
  *  © 2021 Fred Decker
- *  © 2020-2021 Harald Barth
+ *  © 2020-2025 Harald Barth
  *  © 2020-2022 Chris Harlow
  *  All rights reserved.
  *  
@@ -67,16 +67,24 @@ CALLBACK_STATE DCCACK::callbackState=READY;
 ACK_CALLBACK DCCACK::ackManagerCallback;
 
 void  DCCACK::Setup(int cv, byte byteValueOrBitnum, ackOp const program[], ACK_CALLBACK callback) {
+  // On ESP32 the joined track is hidden from sight (it has type MAIN)
+  // and because of that we need first check if track was joined and
+  // then unjoin if necessary. This requires that the joined flag is
+  // cleared when the prog track is removed.
   ackManagerRejoin=TrackManager::isJoined();
+  //DIAG(F("Joined is %d"), ackManagerRejoin);
   if (ackManagerRejoin) {
     // Change from JOIN must zero resets packet.
     TrackManager::setJoin(false);
     DCCWaveform::progTrack.clearResets();
   }
-
   progDriver=TrackManager::getProgDriver();
+  //DIAG(F("Progdriver is %d"), progDriver);
   if (progDriver==NULL) {
-    TrackManager::setJoin(ackManagerRejoin);
+    if (ackManagerRejoin) {
+      DIAG(F("Joined but no Prog track"));
+      TrackManager::setJoin(false);
+    }
     callback(-3); // we dont have a prog track!
     return;
   }
@@ -339,6 +347,20 @@ void DCCACK::loop() {
             opcode=GETFLASH(ackManagerProg);
           }
           break;
+     case BAD20SKIP:
+          if (ackManagerByte > 120) {
+            // skip to SKIPTARGET if cv20 is >120 (some decoders respond with 255)
+            if (Diag::ACK) DIAG(F("XX cv20=%d "),ackManagerByte);
+            while (opcode!=SKIPTARGET) {
+              ackManagerProg++;
+              opcode=GETFLASH(ackManagerProg);
+            }
+          }
+          break; 
+     case FAIL_IF_NONZERO_NAK: // fail if writing long address to decoder that cant support it
+          if (ackManagerByte==0) break;
+          callback(-4);  
+          return;           
      case SKIPTARGET:
           break;
      default:
@@ -474,7 +496,8 @@ void DCCACK::checkAck(byte sentResetsSincePacket) {
     }
     trailingEdgeCounter = 0;
 
-    if (ackPulseDuration>=minAckPulseDuration && ackPulseDuration<=maxAckPulseDuration) {
+    if (ackPulseDuration>=minAckPulseDuration
+	&& (ackPulseDuration<=maxAckPulseDuration || maxAckPulseDuration == 0)) {
         ackCheckDuration=millis()-ackCheckStart;
         ackDetected=true;
         ackPending=false;
@@ -483,4 +506,3 @@ void DCCACK::checkAck(byte sentResetsSincePacket) {
     }      
     ackPulseStart=0;  // We have detected a too-short or too-long pulse so ignore and wait for next leading edge 
 }
-
