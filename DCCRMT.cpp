@@ -205,7 +205,14 @@ static void IRAM_ATTR mcpwmPulseOn() {
   // default is pos edge trigger, handled by mcpwm_sync_invert_gpio_synchro()
   // if neg edge needed
   mcpwm_sync_configure(MCPWM_UNIT_0, MCPWM_TIMER_0, &sync_conf);
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM_SYNC_0, 5 /*DIRA*/);
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM_SYNC_0, 0 /*MAIN DIRA pin as placeholder*/ );
+  // use internal pin instead of 5 /*DIRA external shield aka DIRC*/.
+  // mux name of sync 0 input: PWM0_SYNC0_IN_IDX
+  // mux name of RMT output: RMT_SIG_OUT0_IDX
+  // mux empty input mirror: SIG_IN_FUNC227_IDX
+  // https://docs.espressif.com/projects/rust/esp-hal/1.0.0-beta.0/esp32/src/esp_hal/soc/esp32/psram.rs.html
+  gpio_matrix_out(30 /*unused-silicon*/, RMT_SIG_OUT0_IDX, false, false);
+  gpio_matrix_in (30 /*unused-silicon*/, PWM0_SYNC0_IN_IDX, false);
 }
 
 
@@ -224,7 +231,6 @@ RMTChannel::RMTChannel(pinpair pins, bool isMain) {
   //
   // ALLOCATED = RMT_CHAN_PER_DCC_CHAN * SOC_RMT_MEM_WORDS_PER_CHANNEL
   // MAX_PACKET_SIZE = floor((ALLOCATED - PREAMBLE_LEN - 2)/9 - 1)
-  //
 
   if (isMain) {
     ch = 0;

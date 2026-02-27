@@ -54,6 +54,8 @@ void DCCWaveform::begin() {
       //DIAG(F("new MAIN channel with pins %d %d"), p.pin, p.invpin);
       rmtMainChannel = new RMTChannel(p, true); /* create new main channel */
     }
+//    int8_t brakePin = md->getBrakePinSigned();
+//    rmtMainChannel->addRC
   }
   MotorDriver *md = TrackManager::getProgDriver();
   if (md) {
