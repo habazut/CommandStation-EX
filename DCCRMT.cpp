@@ -399,4 +399,25 @@ bool RMTChannel::addPin(byte pin, bool inverted) {
 bool RMTChannel::addPin(pinpair pins) {
   return addPin(pins.pin) && addPin(pins.invpin, true);
 }
+// and we can not yet take away what we giweth
+bool RMTChannel::addRCPin(int16_t brakePin) {
+  bool inverted = false;
+  if (brakePin<0) {
+    inverted = true;
+    brakePin = -brakePin;
+  }
+  if (brakePin == UNUSED_PIN)
+    return true;
+  // now we can work with brakePin
+  DIAG(F("Adding RC pin %d %s"), brakePin, inverted ? "inverted" : "");  
+  gpio_num_t gpioNum = (gpio_num_t)(brakePin);
+  esp_err_t err;
+  PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpioNum], PIN_FUNC_GPIO);
+  err = gpio_set_direction(gpioNum, GPIO_MODE_OUTPUT);
+  if (err != ESP_OK) return false;
+  gpio_matrix_out(gpioNum, PWM0_OUT0A_IDX, inverted, 0);
+  if (err != ESP_OK) return false;
+  return true;
+
+}
 #endif //ESP32
