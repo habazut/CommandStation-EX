@@ -22,6 +22,10 @@
 // Please refer to DCCTimer.h for general comments about how this class works
 // This is to avoid repetition and duplication.
 
+#ifndef UNUSED_PIN     // sync define with the one in MotorDrivers.h and MotorDriver.h
+#define UNUSED_PIN 255 // inside uint8_t
+#endif
+
 #ifdef ARDUINO_ARCH_ESP8266
 
 #include "DCCTimer.h"
@@ -236,15 +240,23 @@ void DCCTimer::DCCEXledcAttachPin(uint8_t pin, int8_t channel, bool inverted) {
     gpio_matrix_out(pin, LEDCToMux[channel], inverted, 0);
 }
 
-void DCCTimer::DCCEXanalogCopyChannel(int8_t frompin, int8_t topin) {
+void DCCTimer::DCCEXanalogCopyChannel(int16_t frompin, int16_t topin) {
   // arguments are signed depending on inversion of pins
-  DIAG(F("Pin %d copied to %d"), frompin, topin);
+  //DIAG(F("Pin %d copied to %d"), frompin, topin);
   bool inverted = false;
   if (frompin<0)
     frompin = -frompin;
   if (topin<0) {
     inverted = true;
     topin = -topin;
+  }
+  if (frompin == UNUSED_PIN) {
+    DIAG(F("Can not copy from unused frompin"));
+    return;
+  }
+  if (topin == UNUSED_PIN) {
+    DIAG(F("Can not copy to unused topin"));
+    return;
   }
   int channel = pin_to_channel[frompin]; // after abs(frompin)
   pin_to_channel[topin] = channel;
