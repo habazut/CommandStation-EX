@@ -126,6 +126,12 @@ RMTChannel *channelHandle[8] = { 0 };
 
 static volatile uint8_t cutoutCounter = 0;
 
+// define time values for cutout
+#define CUTOUT_TOTAL                486  // usec
+#define CUTOUT_BASE_FREQ           2057  //1000*1000/CUTOUT_TOTAL Hz
+#define CUTOUT_PULSE                459  //CUTOUT_TOTAL-27
+#define CUTOUT_OFFSET_IN_PROMILLE   944  //CUTOUT_PULSE*1000/CUTOUT_TOTAL // 1-(28/488)
+#define CUTOUT_OFFSET_IN_PERCENT   94.4  //CUTOUT_OFFSET_IN_PROMILLE/10.0 // float please
 // As the DCC packet end marker was moved to the next preamble
 // this happens at the beginning of that end packet marker (bit).
 void IRAM_ATTR interrupt(rmt_channel_t channel, void *t) {
@@ -138,10 +144,10 @@ void IRAM_ATTR interrupt(rmt_channel_t channel, void *t) {
     // not needed here, we keep it enabled all the time
     //MCPWM1.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
     __digitalWrite(13 /*BRKA*/, 0);
-    mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_GEN_A, 464);
+    mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_GEN_A, CUTOUT_PULSE);
     mcpwm_sync_config_t sync_conf = {
       .sync_sig = MCPWM_SELECT_GPIO_SYNC0,
-      .timer_val = 939, // in promille of all values
+      .timer_val =  CUTOUT_OFFSET_IN_PROMILLE, // in promille of all values
       .count_direction = MCPWM_TIMER_DIRECTION_UP,
     };
     mcpwm_sync_configure(MCPWM_UNIT_1, MCPWM_TIMER_0, &sync_conf);
@@ -188,9 +194,9 @@ static void IRAM_ATTR mcpwmPulseOn() {
   digitalWrite(13, 1);
 
   mcpwm_config_t pwm_config = {
-    .frequency = 2024,  // in Hz 1/0.000494  (30+464usec = 494 usec)
-    .cmpr_a = 93.9,     // duty cycle of PWMxA (float in %, 100%-6.1%)
-    .cmpr_b = 0,        // not used 
+    .frequency = CUTOUT_BASE_FREQ,      // calculation see above
+    .cmpr_a = CUTOUT_OFFSET_IN_PERCENT, // duty cycle of PWMxA (float in %)
+    .cmpr_b = 0,                        // not used
     .duty_mode = MCPWM_DUTY_MODE_0,
     .counter_mode = MCPWM_UP_COUNTER,
   };
@@ -199,7 +205,7 @@ static void IRAM_ATTR mcpwmPulseOn() {
 
   mcpwm_sync_config_t sync_conf = {
         .sync_sig = MCPWM_SELECT_GPIO_SYNC0,
-        .timer_val = 939,
+        .timer_val = CUTOUT_OFFSET_IN_PROMILLE, // calculation see above
         .count_direction = MCPWM_TIMER_DIRECTION_UP,
   };
   // default is pos edge trigger, handled by mcpwm_sync_invert_gpio_synchro()
