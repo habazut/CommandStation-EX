@@ -133,29 +133,29 @@ void IRAM_ATTR interrupt(rmt_channel_t channel, void *t) {
   if (tt) tt->RMTinterrupt();
   if (channel == 0) {
     DCCTimer::updateMinimumFreeMemoryISR(0);
-    MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 4; // bit 4 means "on sync"
+    MCPWM1.operators[0].gen_stmp_cfg.gen_a_upmethod = 4; // bit 4 means "on sync"
     cutoutCounter = 0;
     // not needed here, we keep it enabled all the time
-    //MCPWM0.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
+    //MCPWM1.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
     __digitalWrite(13 /*BRKA*/, 0);
-    mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_GEN_A, 464);
+    mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_GEN_A, 464);
     mcpwm_sync_config_t sync_conf = {
       .sync_sig = MCPWM_SELECT_GPIO_SYNC0,
       .timer_val = 939, // in promille of all values
       .count_direction = MCPWM_TIMER_DIRECTION_UP,
     };
-    mcpwm_sync_configure(MCPWM_UNIT_0, MCPWM_TIMER_0, &sync_conf);
+    mcpwm_sync_configure(MCPWM_UNIT_1, MCPWM_TIMER_0, &sync_conf);
   }
 }
 
 // This intrrupt is called on sync which is configured on mcpwmPulseOn()
 static void IRAM_ATTR mcpwmIsrHandler(void* arg) {
-  if (MCPWM0.int_st.timer0_tez_int_st) {
-    MCPWM0.int_clr.timer0_tez_int_clr = 1;
+  if (MCPWM1.int_st.timer0_tez_int_st) {
+    MCPWM1.int_clr.timer0_tez_int_clr = 1;
     if (cutoutCounter == 1) {
       __digitalWrite(13 /*BRKA*/, 1);
       // this does not work as the enable does not go into effect immidiately
-      // MCPWM0.int_ena.timer0_tez_int_ena = 0;              // Disable interrupt on TEZ
+      // MCPWM1.int_ena.timer0_tez_int_ena = 0;              // Disable interrupt on TEZ
       //cutoutCounter = 0;
     }
     if (cutoutCounter == 2) {      
@@ -166,16 +166,16 @@ static void IRAM_ATTR mcpwmIsrHandler(void* arg) {
       cutoutCounter++;
     }
     if (cutoutCounter < 2) {
-      MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 1; // bit 1 means "TEZ = timer zero"
-      mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_GEN_A, 0);
-      mcpwm_sync_disable(MCPWM_UNIT_0, MCPWM_TIMER_0);
+      MCPWM1.operators[0].gen_stmp_cfg.gen_a_upmethod = 1; // bit 1 means "TEZ = timer zero"
+      mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_GEN_A, 0);
+      mcpwm_sync_disable(MCPWM_UNIT_1, MCPWM_TIMER_0);
       cutoutCounter++;
     }
   }
 }
 
 
-// Configure MCPWM unit 0.
+// Configure MCPWM unit 1.
 // https://docs.espressif.com/projects/esp-idf/en/v4.4/esp32/api-reference/peripherals/mcpwm.html
 // Connect Operator 0 output A PWM0A to pin XXX   (this should go to brake then)
 // Connect Timer0 input sync 0 SYNC0 from pin YYY (this should connect to RMT channel 0 output
@@ -194,8 +194,8 @@ static void IRAM_ATTR mcpwmPulseOn() {
     .duty_mode = MCPWM_DUTY_MODE_0,
     .counter_mode = MCPWM_UP_COUNTER,
   };
-  mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwm_config);
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, 26 /*PWMA?*/);
+  mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_0, &pwm_config);
+  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0A, 26 /*PWMA?*/);
 
   mcpwm_sync_config_t sync_conf = {
         .sync_sig = MCPWM_SELECT_GPIO_SYNC0,
@@ -204,15 +204,15 @@ static void IRAM_ATTR mcpwmPulseOn() {
   };
   // default is pos edge trigger, handled by mcpwm_sync_invert_gpio_synchro()
   // if neg edge needed
-  mcpwm_sync_configure(MCPWM_UNIT_0, MCPWM_TIMER_0, &sync_conf);
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM_SYNC_0, 0 /*MAIN DIRA pin as placeholder*/ );
+  mcpwm_sync_configure(MCPWM_UNIT_1, MCPWM_TIMER_0, &sync_conf);
+  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM_SYNC_0, 0 /*MAIN DIRA pin as placeholder*/ );
   // use internal pin instead of 5 /*DIRA external shield aka DIRC*/.
-  // mux name of sync 0 input: PWM0_SYNC0_IN_IDX
+  // mux name of sync 0 input: PWM1_SYNC0_IN_IDX
   // mux name of RMT output: RMT_SIG_OUT0_IDX
   // mux empty input mirror: SIG_IN_FUNC227_IDX
   // https://docs.espressif.com/projects/rust/esp-hal/1.0.0-beta.0/esp32/src/esp_hal/soc/esp32/psram.rs.html
   gpio_matrix_out(30 /*unused-silicon*/, RMT_SIG_OUT0_IDX, false, false);
-  gpio_matrix_in (30 /*unused-silicon*/, PWM0_SYNC0_IN_IDX, false);
+  gpio_matrix_in (30 /*unused-silicon*/, PWM1_SYNC0_IN_IDX, false);
 }
 
 
@@ -308,13 +308,13 @@ RMTChannel::RMTChannel(pinpair pins, bool isMain) {
   // test with mcpwm
   mcpwmPulseOn();
   ESP_ERROR_CHECK(mcpwm_isr_register(
-		    MCPWM_UNIT_0, mcpwmIsrHandler, NULL,
+		    MCPWM_UNIT_1, mcpwmIsrHandler, NULL,
 		    ESP_INTR_FLAG_LOWMED|
 		    ESP_INTR_FLAG_SHARED,
 		    /*ESP_INTR_FLAG_IRAM,*/
 		    NULL)); //Set ISR Handler
-  MCPWM0.int_clr.timer0_tez_int_clr = 1;              // Clear the interrupt flag 
-  MCPWM0.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
+  MCPWM1.int_clr.timer0_tez_int_clr = 1;              // Clear the interrupt flag 
+  MCPWM1.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
 
 }
 
@@ -415,7 +415,7 @@ bool RMTChannel::addRCPin(int16_t brakePin) {
   PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpioNum], PIN_FUNC_GPIO);
   err = gpio_set_direction(gpioNum, GPIO_MODE_OUTPUT);
   if (err != ESP_OK) return false;
-  gpio_matrix_out(gpioNum, PWM0_OUT0A_IDX, inverted, 0);
+  gpio_matrix_out(gpioNum, PWM1_OUT0A_IDX, inverted, 0);
   if (err != ESP_OK) return false;
   return true;
 
