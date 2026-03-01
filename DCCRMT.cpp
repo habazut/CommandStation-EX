@@ -211,8 +211,12 @@ static void IRAM_ATTR mcpwmPulseOn() {
   // default is pos edge trigger, handled by mcpwm_sync_invert_gpio_synchro()
   // if neg edge needed
   mcpwm_sync_configure(MCPWM_UNIT_1, MCPWM_TIMER_0, &sync_conf);
-  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM_SYNC_0, 0 /*MAIN DIRA pin as placeholder*/ );
-  // use internal pin instead of 5 /*DIRA external shield aka DIRC*/.
+#ifndef BOOSTER_INPUT
+#error We need BOOSTER_INPUT to be defined, some temporary input pin needed
+#endif
+  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM_SYNC_0, BOOSTER_INPUT); // used as an input placehoder, changed below
+
+  // use internal pin instead
   // mux name of sync 0 input: PWM1_SYNC0_IN_IDX
   // mux name of RMT output: RMT_SIG_OUT0_IDX
   // mux empty input mirror: SIG_IN_FUNC227_IDX
