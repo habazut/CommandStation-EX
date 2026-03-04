@@ -80,17 +80,15 @@ void DCCTimer::startRailcomTimer(byte brakePin) {
        (there will be 7 DCC timer1 ticks in which to do this.)
     
     */
-  const int Tcs=(26+32)/2;   // half way spec Desired time from idealised setup call (at previous DCC timer interrupt) to the cutout.  
-  const int cutoutDuration = 450; // As chosen by most
-  const int cycle=(cutoutDuration+1)/2; // 
-   
+  const int Tcs=28;    // (26+32)/2 would be half way spec Desired time from idealised setup call (at previous DCC timer interrupt) to the cutout but choose even
+  const int cutoutDuration = 450;    // As chosen by most
   const byte delayBeforeCutout=58+58+Tcs; // Expected time from idealised setup call (at previous DCC timer interrupt) to the cutout. This is the time we need to wait before we can set pin 9 high. We will then set pin 9 low at the next tick which is cutoutDuration later. This value should be reduced to reflect the Timer1 value measuring the time since the previous hardware interrupt.
   
   // Set Timer2 to CTC mode with set on compare match
   TCCR2A = (1 << WGM21) | (1 << COM2B0) | (1 << COM2B1);
   // Prescaler of 32
   TCCR2B =  (1 << CS21) | (1 << CS20); 
-  OCR2A = cycle; // Compare match value for cutout duration
+  OCR2A = cutoutDuration/2; // Compare match value for cutout duration in timer2 ticks (2uSec)
   // Enable Timer2 output on pin 9 (OC2B)
   DDRB |= (1 << DDB1);
 
@@ -100,8 +98,11 @@ void DCCTimer::startRailcomTimer(byte brakePin) {
   // tcnt1 = prescaler 64,  tcnt2 prescaler=32
   noInterrupts();
   uint16_t timeSlip=(TCNT1/64)*32;
-  // Adjust the Timer2 counter so it first triggers at the right place in the waveform. 
-  TCNT2=cycle+timeSlip/2-delayBeforeCutout/2;
+  // Adjust the Timer2 counter so it first triggers at the right place in the waveform.
+  // TCNT1 moves 8 ticks per uSec
+  // TCNT2 uses 2 uSec for each tick
+  // TCNT1 is 8*2 = 16 times faster than TCNT2
+  TCNT2=(cutoutDuration+TCNT1/8-delayBeforeCutout)/2;
   interrupts();
 }
 
