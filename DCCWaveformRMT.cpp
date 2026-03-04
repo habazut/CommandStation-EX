@@ -115,9 +115,4 @@ void IRAM_ATTR DCCWaveform::loop() {
   DCCACK::checkAck(progTrack.getResets());
 }
 
-bool DCCWaveform::setRailcom(bool on, bool debug) {
-  // TODO... ESP32 railcom waveform
-  return false;
-}
-
 #endif

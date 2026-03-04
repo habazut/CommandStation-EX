@@ -132,18 +132,6 @@ volatile byte DCCWaveform::railcomCutoutCounter=0;    // cyclic cutout
 volatile byte DCCWaveform::railcomLastAddressHigh=0;
 volatile byte DCCWaveform::railcomLastAddressLow=0;
 
-bool DCCWaveform::setRailcom(bool on, bool debug) {
-  if (on && railcomPossible) {
-    railcomActive=true;
-    railcomDebug=debug;
-  }
-  else {
-    railcomActive=false;
-    railcomDebug=false;
-    railcomSampleWindow=false;
-  } 
-  return railcomActive;
-}
 
 #pragma GCC push_options
 #pragma GCC optimize ("-O3")

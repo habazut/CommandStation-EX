@@ -82,13 +82,28 @@ class DCCWaveform {
     void schedulePacket(const byte buffer[], byte byteCount, byte repeats);
     bool isReminderWindowOpen();
     void promotePendingPacket();
-    static bool setRailcom(bool on, bool debug);
+        static bool setRailcom(bool on, bool debug) {
+      if (on && railcomPossible) {
+        railcomActive=true;
+        railcomDebug=debug;
+      }
+      else {
+        railcomActive=false;
+        railcomDebug=false;
+        railcomSampleWindow=false;
+      } 
+      return railcomActive;
+  }
+
     inline static bool isRailcom() {
       return railcomActive;
     };
     inline static byte getRailcomCutoutCounter() {
       return railcomCutoutCounter;
     };
+    inline static void incCutoutCounter() {
+      railcomCutoutCounter++;
+    }
     inline static bool isRailcomSampleWindow() {
       return railcomSampleWindow;
     };
@@ -138,6 +153,8 @@ class DCCWaveform {
     static volatile byte railcomCutoutCounter; // incremented for each cutout
     static volatile byte railcomLastAddressHigh,railcomLastAddressLow;
     static bool cutoutNextTime;   // railcom
+    
+
 #ifdef ARDUINO_ARCH_ESP32
   static RMTChannel *rmtMainChannel;
   static RMTChannel *rmtProgChannel;

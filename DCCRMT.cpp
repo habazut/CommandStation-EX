@@ -167,6 +167,7 @@ static void IRAM_ATTR mcpwmIsrHandler(void* arg) {
     if (cutoutCounter == 2) {      
       __digitalWrite(13 /*BRKA*/, 0);
       cutoutCounter++;
+      DCCWaveform::incCutoutCounter();
     } else if (cutoutCounter == 3) {      
       __digitalWrite(13 /*BRKA*/, 1);
       cutoutCounter++;
@@ -192,7 +193,7 @@ static void IRAM_ATTR mcpwmPulseOn() {
   //gpio_set_direction((gpio_num_t)13, GPIO_MODE_OUTPUT);
   pinMode(13, OUTPUT);
   digitalWrite(13, 1);
-
+  DCCWaveform::setRailcomPossible(true);
   mcpwm_config_t pwm_config = {
     .frequency = CUTOUT_BASE_FREQ,      // calculation see above
     .cmpr_a = CUTOUT_OFFSET_IN_PERCENT, // duty cycle of PWMxA (float in %)
