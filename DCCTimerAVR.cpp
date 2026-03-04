@@ -81,8 +81,7 @@ void DCCTimer::startRailcomTimer(byte brakePin) {
     
     */
   const int Tcs=(26+32)/2;   // half way spec Desired time from idealised setup call (at previous DCC timer interrupt) to the cutout.  
-  const int Tce=(454+488)/2; // half way spec (460..480uS) Time from start of cutout to end of cutout.
-  const int cutoutDuration = Tce-Tcs; // Desired interval in microseconds
+  const int cutoutDuration = 450; // As chosen by most
   const int cycle=(cutoutDuration+1)/2; // 
    
   const byte delayBeforeCutout=58+58+Tcs; // Expected time from idealised setup call (at previous DCC timer interrupt) to the cutout. This is the time we need to wait before we can set pin 9 high. We will then set pin 9 low at the next tick which is cutoutDuration later. This value should be reduced to reflect the Timer1 value measuring the time since the previous hardware interrupt.
@@ -95,15 +94,14 @@ void DCCTimer::startRailcomTimer(byte brakePin) {
   // Enable Timer2 output on pin 9 (OC2B)
   DDRB |= (1 << DDB1);
 
-  // timeSlip is the expected time from idealised 
-  // setup call (at previous DCC timer interrupt) to the cutout. 
-  // This value should be reduced to reflect the Timer1 value
-  // measuring the time since the previous hardware interrupt
-
+  // timeSlip is the expired time since the DCC timer interrupt that triggered this call.
+  // This allows us to cope with any delays between the interrupt and this code executing.  
+  
   // tcnt1 = prescaler 64,  tcnt2 prescaler=32
   noInterrupts();
-  uint16_t timeSlip=(TCNT1/64)*32; 
-  TCNT2=cycle-timeSlip/2-delayBeforeCutout/2;
+  uint16_t timeSlip=(TCNT1/64)*32;
+  // Adjust the Timer2 counter so it first triggers at the right place in the waveform. 
+  TCNT2=cycle+timeSlip/2-delayBeforeCutout/2;
   interrupts();
 }
 
