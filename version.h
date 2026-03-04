@@ -3,7 +3,11 @@
 
 #include "StringFormatter.h"
 
-#define VERSION "5.5.64"
+#define VERSION "5.5.66"
+// 5.5.66 - Bugfix: NeoPixel buffer size for RGBW devices
+//        - <D WIFI/ETHERNET ON> for SerialUsbLog diagnostics
+// 5.5.65 - Enable ETHERNET_HOST_NAME (defaults to WIFI_HOST_NAME)
+//        - SerialUsbLog restructure 
 // 5.5.64 - I2C scan included in <D HAL SHOW>
 // 5.5.63 - Bugfix: EXRAIL IFLOCO did not handle -1 (loco not found)
 // 5.5.62 - EXRAIL IFLOCO(list)
