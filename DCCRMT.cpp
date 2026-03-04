@@ -202,7 +202,9 @@ static void IRAM_ATTR mcpwmPulseOn() {
     .counter_mode = MCPWM_UP_COUNTER,
   };
   mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_0, &pwm_config);
-  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0A, 26 /*PWMA?*/);
+  // We do not connect the mcpwm output anywhere here
+  // like with mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0A, somepin)
+  // but we do that with gpio_matrix_out() later at another place.
 
   mcpwm_sync_config_t sync_conf = {
         .sync_sig = MCPWM_SELECT_GPIO_SYNC0,
@@ -212,15 +214,13 @@ static void IRAM_ATTR mcpwmPulseOn() {
   // default is pos edge trigger, handled by mcpwm_sync_invert_gpio_synchro()
   // if neg edge needed
   mcpwm_sync_configure(MCPWM_UNIT_1, MCPWM_TIMER_0, &sync_conf);
-#ifndef BOOSTER_INPUT
-#error We need BOOSTER_INPUT to be defined, some temporary input pin needed
-#endif
-  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM_SYNC_0, BOOSTER_INPUT); // used as an input placehoder, changed below
-
-  // use internal pin instead
-  // mux name of sync 0 input: PWM1_SYNC0_IN_IDX
-  // mux name of RMT output: RMT_SIG_OUT0_IDX
-  // mux empty input mirror: SIG_IN_FUNC227_IDX
+  // Here We wanted to do with the unused silicon "virtual" pin 30.
+  // like this mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM_SYNC_0, 30);
+  // But mcpwm_gpio_init() checks if the pins are real so we can't do
+  // that. Instead we use gpio_matrix_in(), see below.
+  // mux name of pwm 1 sync 0 input: PWM1_SYNC0_IN_IDX
+  // mux name of RMT 0 output: RMT_SIG_OUT0_IDX
+  // pin 30 is the output opposite of a mux input mirror like the SIG_IN_FUNC227_IDX
   // https://docs.espressif.com/projects/rust/esp-hal/1.0.0-beta.0/esp32/src/esp_hal/soc/esp32/psram.rs.html
   gpio_matrix_out(30 /*unused-silicon*/, RMT_SIG_OUT0_IDX, false, false);
   gpio_matrix_in (30 /*unused-silicon*/, PWM1_SYNC0_IN_IDX, false);
