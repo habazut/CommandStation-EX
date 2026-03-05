@@ -124,7 +124,9 @@ static void IRAM_ATTR __digitalWrite(uint8_t pin, uint8_t val) {
 // is only ONE common ISR routine for all channels.
 RMTChannel *channelHandle[8] = { 0 };
 
-static volatile uint8_t cutoutCounter = 0;
+// When cutoutFlag == 0 then it is the first
+// interrupt and we do the cutout
+static volatile uint8_t cutoutFlag = 0;
 
 // define time values for cutout
 #define CUTOUT_TOTAL                486  // usec
@@ -140,10 +142,11 @@ void IRAM_ATTR interrupt(rmt_channel_t channel, void *t) {
   if (channel == 0) {
     DCCTimer::updateMinimumFreeMemoryISR(0);
     MCPWM1.operators[0].gen_stmp_cfg.gen_a_upmethod = 4; // bit 4 means "on sync"
-    cutoutCounter = 0;
+    cutoutFlag = 0;
     // not needed here, we keep it enabled all the time
     //MCPWM1.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
-    __digitalWrite(13 /*BRKA*/, 0);
+    //DEBUG __digitalWrite(13 , 0);
+    //DEBUG __digitalWrite(26 , 1);
     mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_GEN_A, CUTOUT_PULSE);
     mcpwm_sync_config_t sync_conf = {
       .sync_sig = MCPWM_SELECT_GPIO_SYNC0,
@@ -158,26 +161,24 @@ void IRAM_ATTR interrupt(rmt_channel_t channel, void *t) {
 static void IRAM_ATTR mcpwmIsrHandler(void* arg) {
   if (MCPWM1.int_st.timer0_tez_int_st) {
     MCPWM1.int_clr.timer0_tez_int_clr = 1;
-    if (cutoutCounter == 1) {
-      __digitalWrite(13 /*BRKA*/, 1);
-      // this does not work as the enable does not go into effect immidiately
-      // MCPWM1.int_ena.timer0_tez_int_ena = 0;              // Disable interrupt on TEZ
-      //cutoutCounter = 0;
-    }
-    if (cutoutCounter == 2) {      
-      __digitalWrite(13 /*BRKA*/, 0);
-      cutoutCounter++;
-      DCCWaveform::incCutoutCounter();
-    } else if (cutoutCounter == 3) {      
-      __digitalWrite(13 /*BRKA*/, 1);
-      cutoutCounter++;
-    }
-    if (cutoutCounter < 2) {
+    if (cutoutFlag == 0) {
+      //DEBUG __digitalWrite(26, 0);
+      // The cutout has not happened yet
+      // This interrupt is on cutout start
+      // but we reset already the mcpwm into standby mode
       MCPWM1.operators[0].gen_stmp_cfg.gen_a_upmethod = 1; // bit 1 means "TEZ = timer zero"
       mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_GEN_A, 0);
       mcpwm_sync_disable(MCPWM_UNIT_1, MCPWM_TIMER_0);
-      cutoutCounter++;
+      cutoutFlag++;
+    } else if (cutoutFlag == 1) { // the else is important
+      //DEBUG __digitalWrite(13 , 1);
+      // Cutout is done
+      DCCWaveform::incCutoutCounter();
+      cutoutFlag++;
+      // this does not work as the enable does not go into effect immidiately
+      // MCPWM1.int_ena.timer0_tez_int_ena = 0;              // Disable interrupt on TEZ
     }
+    // when cutoutFlag has reached 2 this routine does nothing
   }
 }
 
@@ -189,10 +190,9 @@ static void IRAM_ATTR mcpwmIsrHandler(void* arg) {
 // pin through the mux)
 static void IRAM_ATTR mcpwmPulseOn() {
 
-  // for debug
-  //gpio_set_direction((gpio_num_t)13, GPIO_MODE_OUTPUT);
-  pinMode(13, OUTPUT);
-  digitalWrite(13, 1);
+  //DEBUG pinMode(13, OUTPUT);
+  //DEBUG pinMode(26, OUTPUT);
+
   DCCWaveform::setRailcomPossible(true);
   mcpwm_config_t pwm_config = {
     .frequency = CUTOUT_BASE_FREQ,      // calculation see above
