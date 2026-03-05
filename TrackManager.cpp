@@ -226,6 +226,13 @@ bool TrackManager::setTrackMode(byte trackToSet, TRACK_MODE mode, int16_t dcAddr
       //DIAG(F("Track=%c remove ^pin %d"),trackToSet+'A', p.invpin);
       gpio_reset_pin((gpio_num_t)p.invpin);
     }
+    if (mode & TRACK_MODIFIER_RAILCOM) {
+      byte bp = track[trackToSet]->getBrakePin();
+      if (bp != UNUSED_PIN) {
+	gpio_reset_pin((gpio_num_t)bp);
+	digitalWrite(bp, LOW);
+      }
+    }
 #ifdef BOOSTER_INPUT
     if (mode & TRACK_MODE_BOOST) {
       //DIAG(F("Track=%c mode boost pin %d"),trackToSet+'A', p.pin);
@@ -400,12 +407,18 @@ bool TrackManager::parseEqualSign(Print *stream, int16_t params, int16_t p[])
     if (params>1 && (p[0]<0 || p[0]>=MAX_TRACKS)) 
         return false;
     
-    if (params==2  && p[1]=="MAIN"_hk)                     // <= id MAIN>
+    if (params==2  && p[1]=="MAIN"_hk)                                            // <= id MAIN>
         return setTrackMode(p[0],TRACK_MODE_MAIN);
-    if (params==2  && p[1]=="MAIN_INV"_hk)                 // <= id MAIN_INV>
+    if (TRACK_MODIFIER_RAILCOM != 0 && params==2  && p[1]=="MAIN_RAILCOM"_hk)     // <= id MAIN_RAILCOM>
+        return setTrackMode(p[0],TRACK_MODE_MAIN|TRACK_MODIFIER_RAILCOM);
+    if (params==2  && p[1]=="MAIN_INV"_hk)                                        // <= id MAIN_INV>
         return setTrackMode(p[0],TRACK_MODE_MAIN_INV);
-    if (params==2  && p[1]=="MAIN_AUTO"_hk)                // <= id MAIN_AUTO>
+    if (TRACK_MODIFIER_RAILCOM != 0 && params==2  && p[1]=="MAIN_INV_RAILCOM"_hk) // <= id MAIN_INV_RAILCOM>
+        return setTrackMode(p[0],TRACK_MODE_MAIN_INV|TRACK_MODIFIER_RAILCOM);
+    if (params==2  && p[1]=="MAIN_AUTO"_hk)                                       // <= id MAIN_AUTO>
         return setTrackMode(p[0],TRACK_MODE_MAIN_AUTO);
+    if (TRACK_MODIFIER_RAILCOM != 0 && params==2  && p[1]=="MAIN_AUTO_RAILCOM"_hk)// <= id MAIN_AUTO_RAILCOM>
+        return setTrackMode(p[0],TRACK_MODE_MAIN_AUTO|TRACK_MODIFIER_RAILCOM);
     
 #ifndef DISABLE_PROG
     if (params==2  && p[1]=="PROG"_hk)                     // <= id PROG>
@@ -459,7 +472,7 @@ const FSH* TrackManager::getModeName(TRACK_MODE tm) {
   else if (tm & TRACK_MODE_PROG)
     modename=F("PROG");
 #endif
-  else if (tm & TRACK_MODE_NONE)
+  else if (tm == TRACK_MODE_NONE)
     modename=F("NONE");
   else if(tm & TRACK_MODE_EXT)
     modename=F("EXT");
@@ -568,7 +581,7 @@ void TrackManager::setTrackPower(POWERMODE powermode, byte t) {
   }
   TRACK_MODE trackmode = driver->getMode();
   POWERMODE oldpower = driver->getPower();
-  if (trackmode & TRACK_MODE_NONE) {
+  if (trackmode == TRACK_MODE_NONE) {
     driver->setBrake(true);     // Track is unused. Brake is good to have.
     powermode = POWERMODE::OFF; // Track is unused. Force it to OFF
   } else if (trackmode & TRACK_MODE_DC) { // includes inverted DC (called DCX)
