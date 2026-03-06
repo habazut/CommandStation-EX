@@ -33,8 +33,8 @@ DCCWaveform  DCCWaveform::progTrack(PREAMBLE_BITS_PROG, false);
 RMTChannel *DCCWaveform::rmtMainChannel = NULL;
 RMTChannel *DCCWaveform::rmtProgChannel = NULL;
 
-bool DCCWaveform::railcomPossible=false;     // High accuracy only    
-volatile bool DCCWaveform::railcomActive=false;     // switched on by user
+bool DCCWaveform::railcomPossible=true;         // ESP32 always possible
+volatile bool DCCWaveform::railcomActive=true;  // ESP32 switched on by user per track, global always on
 
 DCCWaveform::DCCWaveform(byte preambleBits, bool isMain) {
   isMainTrack = isMain;
