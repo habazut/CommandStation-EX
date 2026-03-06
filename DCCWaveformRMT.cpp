@@ -26,6 +26,7 @@
 #include "DCCWaveform.h"
 #include "DCCACK.h"
 #include "TrackManager.h"
+#include "Railcom.h"
 
 DCCWaveform  DCCWaveform::mainTrack(PREAMBLE_BITS_MAIN, true);
 DCCWaveform  DCCWaveform::progTrack(PREAMBLE_BITS_PROG, false);
@@ -94,6 +95,9 @@ void DCCWaveform::schedulePacket(const byte buffer[], byte byteCount, byte repea
     do {
       ret = rmtchannel->RMTfillData(pendingPacket, pendingLength, pendingRepeats);
     } while(ret > 0);
+    if (isMainTrack && ret == 0) { // packet will be next packet out
+      Railcom::setLoco(pendingPacket[0],pendingPacket[1]);
+    }
   }
 }
 
