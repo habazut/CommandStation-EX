@@ -43,6 +43,7 @@
 #include "DCCTimer.h"
 #include "DCCWaveform.h" // for MAX_PACKET_SIZE
 #include "soc/gpio_sig_map.h"
+#include "Railcom.h"
 
 // mcpwm stuff
 #include "soc/mcpwm_struct.h"
@@ -94,7 +95,8 @@ void setEOT(rmt_item32_t* item) {
   item->val = 0;
 }
 
-// Special for debug
+// Special for debug, this can be called from interrupt.
+#ifdef MCPWM_DEBUG
 static void IRAM_ATTR __digitalWrite(uint8_t pin, uint8_t val) {
   if(val) {
     if(pin < 32) 
@@ -117,6 +119,7 @@ static void IRAM_ATTR __digitalWrite(uint8_t pin, uint8_t val) {
     }
   }
 }
+#endif
 
 // This is an array that contains the this pointers
 // to all uses channel objects. This is used to determine
@@ -145,8 +148,10 @@ void IRAM_ATTR interrupt(rmt_channel_t channel, void *t) {
     cutoutFlag = 0;
     // not needed here, we keep it enabled all the time
     //MCPWM1.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
-    //DEBUG __digitalWrite(13 , 0);
-    //DEBUG __digitalWrite(26 , 1);
+#ifdef MCPWM_DEBUG
+    __digitalWrite(13 , 0);
+    __digitalWrite(26 , 1);
+#endif
     mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_GEN_A, CUTOUT_PULSE);
     mcpwm_sync_config_t sync_conf = {
       .sync_sig = MCPWM_SELECT_GPIO_SYNC0,
@@ -162,7 +167,9 @@ static void IRAM_ATTR mcpwmIsrHandler(void* arg) {
   if (MCPWM1.int_st.timer0_tez_int_st) {
     MCPWM1.int_clr.timer0_tez_int_clr = 1;
     if (cutoutFlag == 0) {
-      //DEBUG __digitalWrite(26, 0);
+#ifdef MCPWM_DEBUG
+      __digitalWrite(26, 0);
+#endif
       // The cutout has not happened yet
       // This interrupt is on cutout start
       // but we reset already the mcpwm into standby mode
@@ -171,9 +178,11 @@ static void IRAM_ATTR mcpwmIsrHandler(void* arg) {
       mcpwm_sync_disable(MCPWM_UNIT_1, MCPWM_TIMER_0);
       cutoutFlag++;
     } else if (cutoutFlag == 1) { // the else is important
-      //DEBUG __digitalWrite(13 , 1);
+#ifdef MCPWM_DEBUG
+      __digitalWrite(13 , 1);
+#endif
       // Cutout is done
-      DCCWaveform::incCutoutCounter();
+      Railcom::incCutout();
       cutoutFlag++;
       // this does not work as the enable does not go into effect immidiately
       // MCPWM1.int_ena.timer0_tez_int_ena = 0;              // Disable interrupt on TEZ
