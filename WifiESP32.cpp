@@ -183,6 +183,13 @@ bool WifiESP::setup(const char *SSid,
   //  enableCoreWDT(1);
   //  disableCoreWDT(0);
 
+  DIAG(F("CPU Freq: %d MHz"), getCpuFrequencyMhz());
+  DIAG(F("Flash Speed: %d Hz"), ESP.getFlashChipSpeed());
+  DIAG(F("Flash Mode: %d"), ESP.getFlashChipMode());
+  DIAG(F("Flash Size: %d MB"), ESP.getFlashChipSize() / (1024 * 1024));
+  DIAG(F("SDK Version: %s"), ESP.getSdkVersion());
+  
+
 #ifdef WIFI_LED
   // Turn off Wifi LED
   pinMode(WIFI_LED, OUTPUT);
