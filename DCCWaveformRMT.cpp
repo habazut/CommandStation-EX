@@ -118,7 +118,7 @@ void IRAM_ATTR DCCWaveform::loop() {
 
 bool DCCWaveform::setRailcom(bool on) {
   // TODO... ESP32 railcom waveform
-  return false;
+  return true;
 }
 
 #endif
