@@ -96,7 +96,6 @@ void DCCWaveform::schedulePacket(const byte buffer[], byte byteCount, byte repea
       ret = rmtchannel->RMTfillData(pendingPacket, pendingLength, pendingRepeats);
     } while(ret > 0);
     if (isMainTrack && ret == 0) { // packet will be next packet out
-      Railcom::setLoco(pendingPacket[0],pendingPacket[1]);
     }
   }
 }
