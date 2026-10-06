@@ -198,6 +198,12 @@ void IRAM_ATTR Sniffer::processInterrupt(uint32_t capticks, bool posedge) {
     }
     if (inpacket) {
       halfbitcounter--;
+      if (halfbitcounter == 1) {
+	// between two bytes or at end
+	if (bitfield & 1) {
+	  // next flank should be start of second half of end packet bit
+	}
+      }
       if (halfbitcounter) {
 	return; // wait until we have full byte
       } else {
