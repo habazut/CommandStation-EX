@@ -126,9 +126,11 @@ static void IRAM_ATTR __digitalWrite(uint8_t pin, uint8_t val) {
 // is only ONE common ISR routine for all channels.
 RMTChannel *channelHandle[8] = { 0 };
 
-// When cutoutFlag == 0 then it is the first
+// When cutoutFlag[n] == 0 then it is the first
 // interrupt and we do the cutout
-static volatile uint8_t cutoutFlag = 0;
+// cutoutFlag[0] for railsync/booster cutout
+// cutoutFlag[1] for RMT/main cutout
+static volatile uint8_t cutoutFlag[2] = { 0, 0 };
 
 // define time values for cutout
 #define CUTOUT_TOTAL                486  // usec
@@ -143,7 +145,7 @@ void IRAM_ATTR interrupt(rmt_channel_t channel, void *t) {
   if (tt) tt->RMTinterrupt();
   if (channel == 0) {
     MCPWM1.operators[0].gen_stmp_cfg.gen_a_upmethod = 4; // bit 4 means "on sync"
-    cutoutFlag = 0;
+    cutoutFlag[1] = 0;
     // not needed here, we keep it enabled all the time
     //MCPWM1.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
 #ifdef MCPWM_DEBUG
@@ -160,11 +162,55 @@ void IRAM_ATTR interrupt(rmt_channel_t channel, void *t) {
   }
 }
 
-// This intrrupt is called on sync which is configured on mcpwmPulseOn()
-static void IRAM_ATTR mcpwmIsrHandler(void* arg) {
+void IRAM_ATTR interruptSniffer() {
+  MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 4; // bit 4 means "on sync"
+  cutoutFlag[0] = 0;
+  // not needed here, we keep it enabled all the time
+  //MCPWM0.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
+#ifdef MCPWM_DEBUG_0
+  __digitalWrite(13 , 0);
+  __digitalWrite(26 , 1);
+#endif
+  mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_GEN_A, CUTOUT_PULSE);
+  mcpwm_sync_config_t sync_conf = {
+    .sync_sig = MCPWM_SELECT_GPIO_SYNC0,
+    .timer_val =  CUTOUT_OFFSET_IN_PROMILLE, // in promille of all values
+    .count_direction = MCPWM_TIMER_DIRECTION_UP,
+  };
+  mcpwm_sync_configure(MCPWM_UNIT_0, MCPWM_TIMER_0, &sync_conf);
+}
+
+// This intrrupt is called on sync which is configured after mcpwmPulseOn()
+static void IRAM_ATTR mcpwmIsrHandler0(void* arg) {
+  if (MCPWM0.int_st.timer0_tez_int_st) {
+    MCPWM0.int_clr.timer0_tez_int_clr = 1;
+    if (cutoutFlag[0] == 0) {
+#ifdef MCPWM_DEBUG_0
+      __digitalWrite(26, 0);
+#endif
+      // The cutout has not happened yet
+      // This interrupt is on cutout start
+      // but we reset already the mcpwm into standby mode
+      MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 1; // bit 1 means "TEZ = timer zero"
+      mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_GEN_A, 0);
+      mcpwm_sync_disable(MCPWM_UNIT_0, MCPWM_TIMER_0);
+      cutoutFlag[0]++;
+    } else if (cutoutFlag[0] == 1) { // the else is important
+#ifdef MCPWM_DEBUG_0
+      __digitalWrite(13 , 1);
+#endif
+      // Cutout is done
+      cutoutFlag[0]++;
+    }
+    // when cutoutFlag[n] has reached 2 this routine does nothing
+  }
+}
+
+// This intrrupt is called on sync which is configured after mcpwmPulseOn()
+static void IRAM_ATTR mcpwmIsrHandler1(void* arg) {
   if (MCPWM1.int_st.timer0_tez_int_st) {
     MCPWM1.int_clr.timer0_tez_int_clr = 1;
-    if (cutoutFlag == 0) {
+    if (cutoutFlag[1] == 0) {
 #ifdef MCPWM_DEBUG
       __digitalWrite(26, 0);
 #endif
@@ -174,18 +220,18 @@ static void IRAM_ATTR mcpwmIsrHandler(void* arg) {
       MCPWM1.operators[0].gen_stmp_cfg.gen_a_upmethod = 1; // bit 1 means "TEZ = timer zero"
       mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_GEN_A, 0);
       mcpwm_sync_disable(MCPWM_UNIT_1, MCPWM_TIMER_0);
-      cutoutFlag++;
-    } else if (cutoutFlag == 1) { // the else is important
+      cutoutFlag[1]++;
+    } else if (cutoutFlag[1] == 1) { // the else is important
 #ifdef MCPWM_DEBUG
       __digitalWrite(13 , 1);
 #endif
       // Cutout is done
       Railcom::incCutout();
-      cutoutFlag++;
+      cutoutFlag[1]++;
       // this does not work as the enable does not go into effect immidiately
       // MCPWM1.int_ena.timer0_tez_int_ena = 0;              // Disable interrupt on TEZ
     }
-    // when cutoutFlag has reached 2 this routine does nothing
+    // when cutoutFlag[n] has reached 2 this routine does nothing
   }
 }
 
@@ -195,7 +241,7 @@ static void IRAM_ATTR mcpwmIsrHandler(void* arg) {
 // Connect Operator 0 output A PWM0A to pin XXX   (this should go to brake then)
 // Connect Timer0 input sync 0 SYNC0 from pin YYY (this should connect to RMT channel 0 output
 // pin through the mux)
-static void IRAM_ATTR mcpwmPulseOn() {
+static void IRAM_ATTR mcpwmPulseOn(mcpwm_unit_t mcpwm_num) {
 
   //DEBUG pinMode(13, OUTPUT);
   //DEBUG pinMode(26, OUTPUT);
@@ -208,7 +254,7 @@ static void IRAM_ATTR mcpwmPulseOn() {
     .duty_mode = MCPWM_DUTY_MODE_0,
     .counter_mode = MCPWM_UP_COUNTER,
   };
-  mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_0, &pwm_config);
+  mcpwm_init(mcpwm_num, MCPWM_TIMER_0, &pwm_config);
   // We do not connect the mcpwm output anywhere here
   // like with mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0A, somepin)
   // but we do that with gpio_matrix_out() later at another place.
@@ -220,17 +266,7 @@ static void IRAM_ATTR mcpwmPulseOn() {
   };
   // default is pos edge trigger, handled by mcpwm_sync_invert_gpio_synchro()
   // if neg edge needed
-  mcpwm_sync_configure(MCPWM_UNIT_1, MCPWM_TIMER_0, &sync_conf);
-  // Here We wanted to do with the unused silicon "virtual" pin 30.
-  // like this mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM_SYNC_0, 30);
-  // But mcpwm_gpio_init() checks if the pins are real so we can't do
-  // that. Instead we use gpio_matrix_in(), see below.
-  // mux name of pwm 1 sync 0 input: PWM1_SYNC0_IN_IDX
-  // mux name of RMT 0 output: RMT_SIG_OUT0_IDX
-  // pin 30 is the output opposite of a mux input mirror like the SIG_IN_FUNC227_IDX
-  // https://docs.espressif.com/projects/rust/esp-hal/1.0.0-beta.0/esp32/src/esp_hal/soc/esp32/psram.rs.html
-  gpio_matrix_out(30 /*unused-silicon*/, RMT_SIG_OUT0_IDX, false, false);
-  gpio_matrix_in (30 /*unused-silicon*/, PWM1_SYNC0_IN_IDX, false);
+  mcpwm_sync_configure(mcpwm_num, MCPWM_TIMER_0, &sync_conf);
 }
 
 
@@ -323,10 +359,23 @@ RMTChannel::RMTChannel(pinpair pins, bool isMain) {
   //rmt_write_items(channel, preamble, preambleLen, false);
   RMTprefill();
   dataReady = false;
-  // test with mcpwm
-  mcpwmPulseOn();
+
+  // Configure MCPWM_UNIT_1 for cutout driven by the "DCC MAIN" RMT channel
+  mcpwmPulseOn(MCPWM_UNIT_1);
+  // Here we wanted to use the unused silicon "virtual" pin 30
+  // like this:
+  // mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM_SYNC_0, 30);
+  //
+  // But mcpwm_gpio_init() checks if the pins are real so we can't do
+  // that. Instead we use gpio_matrix_in(), see below.
+  // mux name of pwm 1 sync 0 input: PWM1_SYNC0_IN_IDX
+  // mux name of RMT 0 output: RMT_SIG_OUT0_IDX
+  // pin 30 is the output opposite of a mux input mirror like the SIG_IN_FUNC227_IDX
+  // https://docs.espressif.com/projects/rust/esp-hal/1.0.0-beta.0/esp32/src/esp_hal/soc/esp32/psram.rs.html
+  gpio_matrix_out(30 /*unused-silicon*/, RMT_SIG_OUT0_IDX, false, false);
+  gpio_matrix_in (30 /*unused-silicon*/, PWM1_SYNC0_IN_IDX, false);
   ESP_ERROR_CHECK(mcpwm_isr_register(
-		    MCPWM_UNIT_1, mcpwmIsrHandler, NULL,
+		    MCPWM_UNIT_1, mcpwmIsrHandler1, NULL,
 		    ESP_INTR_FLAG_LOWMED|
 		    ESP_INTR_FLAG_SHARED,
 		    /*ESP_INTR_FLAG_IRAM,*/
@@ -334,6 +383,19 @@ RMTChannel::RMTChannel(pinpair pins, bool isMain) {
   MCPWM1.int_clr.timer0_tez_int_clr = 1;              // Clear the interrupt flag 
   MCPWM1.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
 
+#ifdef BOOSTER_INPUT
+  // Configure MCPWM_UNIT_0 for cutout driven by the BOOSTER input
+  mcpwmPulseOn(MCPWM_UNIT_0);
+  gpio_matrix_in (BOOSTER_INPUT, PWM0_SYNC0_IN_IDX, false);
+  ESP_ERROR_CHECK(mcpwm_isr_register(
+		    MCPWM_UNIT_0, mcpwmIsrHandler0, NULL,
+		    ESP_INTR_FLAG_LOWMED|
+		    ESP_INTR_FLAG_SHARED,
+		    /*ESP_INTR_FLAG_IRAM,*/
+		    NULL)); //Set ISR Handler
+  MCPWM0.int_clr.timer0_tez_int_clr = 1;              // Clear the interrupt flag 
+  MCPWM0.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
+#endif
 }
 
 void RMTChannel::RMTprefill() {
