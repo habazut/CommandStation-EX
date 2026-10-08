@@ -387,6 +387,7 @@ RMTChannel::RMTChannel(pinpair pins, bool isMain) {
   // Configure MCPWM_UNIT_0 for cutout driven by the BOOSTER input
   mcpwmPulseOn(MCPWM_UNIT_0);
   gpio_matrix_in (BOOSTER_INPUT, PWM0_SYNC0_IN_IDX, false);
+#ifdef NOPE
   ESP_ERROR_CHECK(mcpwm_isr_register(
 		    MCPWM_UNIT_0, mcpwmIsrHandler0, NULL,
 		    ESP_INTR_FLAG_LOWMED|
@@ -395,6 +396,7 @@ RMTChannel::RMTChannel(pinpair pins, bool isMain) {
 		    NULL)); //Set ISR Handler
   MCPWM0.int_clr.timer0_tez_int_clr = 1;              // Clear the interrupt flag 
   MCPWM0.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
+#endif
 #endif
 }
 
