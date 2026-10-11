@@ -64,6 +64,11 @@ static const byte RMT_CHAN_PER_DCC_CHAN = 2;
 // Each byte has one bit extra and at the end we have one EOF marker
 #define DATA_LEN(X) ((X)*9+1)
 
+#define CSBPIN11 16
+#define CSBPIN13  4
+#define CSBPIN8  12
+#define CSBPINA1 39
+
 #if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(4,2,0)
 #error wrong IDF version
 #endif
@@ -95,7 +100,7 @@ void setEOT(rmt_item32_t* item) {
 }
 
 // Special for debug, this can be called from interrupt.
-#ifdef MCPWM_DEBUG
+#if defined(MCPWM_DEBUG) || defined(DEBUG_SPWM)
 static void IRAM_ATTR __digitalWrite(uint8_t pin, uint8_t val) {
   if(val) {
     if(pin < 32) 
@@ -162,22 +167,29 @@ void IRAM_ATTR interrupt(rmt_channel_t channel, void *t) {
   }
 }
 
-void IRAM_ATTR interruptSniffer() {
-  MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 4; // bit 4 means "on sync"
-  cutoutFlag[0] = 0;
-  // not needed here, we keep it enabled all the time
-  //MCPWM0.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
-#ifdef MCPWM_DEBUG_0
-  __digitalWrite(13 , 0);
-  __digitalWrite(26 , 1);
+void IRAM_ATTR interruptSniffer(bool state, bool negfirst) {
+#ifdef DEBUG_SPWM
+  __digitalWrite(CSBPIN11, state ? 1 : 0);
 #endif
-  mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_GEN_A, CUTOUT_PULSE);
-  mcpwm_sync_config_t sync_conf = {
-    .sync_sig = MCPWM_SELECT_GPIO_SYNC0,
-    .timer_val =  CUTOUT_OFFSET_IN_PROMILLE, // in promille of all values
-    .count_direction = MCPWM_TIMER_DIRECTION_UP,
-  };
-  mcpwm_sync_configure(MCPWM_UNIT_0, MCPWM_TIMER_0, &sync_conf);
+  if (state == 1) {
+    gpio_matrix_in (BOOSTER_INPUT, PWM0_SYNC0_IN_IDX, negfirst); // invert if negative is first
+    MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 4; // bit 4 means "on sync"
+    cutoutFlag[0] = 0;
+    // not needed here, we keep it enabled all the time
+    //MCPWM0.int_ena.timer0_tez_int_ena = 1;              // Enable interrupt on TEZ
+    mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_GEN_A, CUTOUT_PULSE);
+    mcpwm_sync_config_t sync_conf = {
+      .sync_sig = MCPWM_SELECT_GPIO_SYNC0,
+      .timer_val = CUTOUT_OFFSET_IN_PROMILLE, // in promille of all values
+      .count_direction = MCPWM_TIMER_DIRECTION_UP,
+    };
+    mcpwm_sync_configure(MCPWM_UNIT_0, MCPWM_TIMER_0, &sync_conf);
+  }
+  if (state == 0) {
+    MCPWM0.operators[0].gen_stmp_cfg.gen_a_upmethod = 1; // means TEZ = timer zero
+    mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_GEN_A, 0);
+    mcpwm_sync_disable(MCPWM_UNIT_0, MCPWM_TIMER_0);
+  }
 }
 
 // This intrrupt is called on sync which is configured after mcpwmPulseOn()
@@ -243,6 +255,9 @@ static void IRAM_ATTR mcpwmIsrHandler1(void* arg) {
 // pin through the mux)
 static void IRAM_ATTR mcpwmPulseOn(mcpwm_unit_t mcpwm_num) {
 
+#ifdef DEBUG_SPWM
+  pinMode(CSBPIN11, OUTPUT);
+#endif
   //DEBUG pinMode(13, OUTPUT);
   //DEBUG pinMode(26, OUTPUT);
 
@@ -482,7 +497,7 @@ bool RMTChannel::addPin(pinpair pins) {
   return addPin(pins.pin) && addPin(pins.invpin, true);
 }
 // and we can not yet take away what we giweth
-bool RMTChannel::addRCPin(int16_t brakePin) {
+bool RMTChannel::addRCPin(int16_t brakePin, bool boosterPwmChannel) {
   bool inverted = false;
   if (brakePin<0) {
     inverted = true;
@@ -497,7 +512,7 @@ bool RMTChannel::addRCPin(int16_t brakePin) {
   PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpioNum], PIN_FUNC_GPIO);
   err = gpio_set_direction(gpioNum, GPIO_MODE_OUTPUT);
   if (err != ESP_OK) return false;
-  gpio_matrix_out(gpioNum, PWM1_OUT0A_IDX, inverted, 0);
+  gpio_matrix_out(gpioNum, boosterPwmChannel ? PWM0_OUT0A_IDX : PWM1_OUT0A_IDX, inverted, 0);
   if (err != ESP_OK) return false;
   return true;
 
